@@ -1,0 +1,162 @@
+:root {
+  --base00: #282828;
+  --base01: #3c3836;
+  --base02: #504945;
+  --base03: #665c54;
+  --base04: #bdae93;
+  --base05: #d5c4a1;
+  --base06: #ebdbb2;
+  --base07: #fbf1c7;
+  --base08: #fb4934;
+  --base09: #fe8019;
+  --base0A: #fabd2f;
+  --base0B: #b8bb26;
+  --base0C: #8ec07c;
+  --base0D: #83a598;
+  --base0E: #d3869b;
+  --base0F: #d65d0e;
+}
+
+body {
+  background-color: var(--base00);
+}
+
+.grid-container {
+  display: grid;
+  grid-gap: 1rem;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-auto-rows: 10rem;
+  width: 50rem;
+}
+
+.grid {
+  background-color: var(--base01);
+  border-radius: 12px;
+  border: 1px solid var(--base06);
+  display: grid;
+  grid-gap: 1rem;
+  padding: 1rem;
+}
+
+.grid-item {
+  background-color: var(--base0D);
+  border-radius: 12px;
+}
+
+.grid:nth-child(1) {
+  grid-template-columns: 1fr 1fr;
+}
+
+.grid:nth-child(2) {
+  grid-template-rows: 1fr 4fr 1fr;
+}
+
+.grid:nth-child(3) {
+  grid-template-rows: 2fr 1fr;
+}
+
+.grid:nth-child(4) {
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+
+  .grid-item {
+    &:nth-child(1) {
+      grid-column: span 4;
+    }
+
+    &:nth-child(4) {
+      grid-column: span 3;
+    }
+  }
+}
+
+.grid:nth-child(5) {
+  grid-template-rows: 1fr 2fr 1fr;
+  grid-template-columns: repeat(5, 1fr);
+
+  .grid-item {
+    &:nth-child(1),
+    &:nth-child(4) {
+      grid-column: 1 / -1;
+    }
+
+    &:nth-child(3) {
+      grid-column: 2 / -1;
+    }
+  }
+}
+
+.grid:nth-child(6) {
+  grid-template-columns: 1fr 3fr;
+}
+
+.grid:nth-child(7) {
+  grid-template-rows: 2fr 1fr 1fr;
+  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-areas:
+    ". . ."
+    "a b c"
+    "a d e";
+
+  .grid-item {
+    &:nth-child(1) {
+      grid-area: a;
+    }
+
+    &:nth-child(2) {
+      grid-area: b;
+    }
+
+    &:nth-child(3) {
+      grid-area: c;
+    }
+
+    &:nth-child(4) {
+      grid-area: d;
+    }
+
+    &:nth-child(5) {
+      grid-area: e;
+    }
+  }
+}
+
+.grid:nth-child(8) {
+  grid-template-columns: 4fr 1fr 1fr;
+  grid-template-rows: 3fr 1fr 1fr;
+
+  .grid-item {
+    &:nth-child(1) {
+      grid-row: span 2;
+    }
+
+    &:nth-child(4) {
+      grid-row: span 2;
+      grid-column: span 2;
+    }
+  }
+}
+
+.grid:nth-child(9) {
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+
+  .grid-item {
+    &:nth-child(1) {
+      grid-row: span 2;
+    }
+
+    &:nth-child(4) {
+      grid-column: span 2;
+    }
+
+    &:nth-child(5) {
+      grid-row: span 2;
+      grid-column: span 2;
+    }
+
+    &:nth-child(7) {
+      grid-row: span 2;
+    }
+  }
+}
