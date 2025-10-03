@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Insert title</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,100..700;1,100..700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="style.css" />
+    <link rel="icon" href="favicon.png" />
+  </head>
+  <body>
+    <nav class="nav">
+      <ul>
+        <li><a href="/">Hjem</a></li>
+        <li><a href="#">Om oss</a></li>
+        <li><a href="#">Tegnetips</a></li>
+        <li><a href="#">Kontakt</a></li>
+      </ul>
+    </nav>
+    <main>
+      <aside class="header">
+        <h1>Tegneserier</h1>
+        <p>Her kan du se tegneserier fra ulike sjangre og stilarter.</p>
+        <p><i>Trykk på bildene for å lese mer om tegneseriene.</i></p>
+      </aside>
+
+      <div class="main">
+        <h2>Eksempel på tegneserier.</h2>
+        <p>Klikk på bildene under for å lese mer om tegneseriene.</p>
+
+        <div class="comics">
+          <div class="comic">
+            <a href="side2.html">
+              <img
+                src="assets/Amazing-Spider-Man-Modern-Era-Epic-Collection-Vol.-14-Big-Time-2025.webp"
+                alt="Spider-man: Big Time"
+              />
+            </a>
+            <p><b>Spider-man</b></p>
+            <p>Edderkopper er ekle.</p>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      const num_comics = 100;
+      const images = [
+        "Amazing-Spider-Man-Modern-Era-Epic-Collection-Vol.-14-Big-Time-2025.webp",
+        "Assorted-Crisis-Events-Vol.-1-TPB-2025-.webp",
+        "Blue-Palo-Verde-4-2025.webp",
+        "Endless-Night-4-2025.webp",
+        "Escape-2-2025.webp",
+        "Far-Down-Below-5-2025.webp",
+        "G.I.-Joe-A-Real-American-Hero-Silent-Missions-TPB-2025.webp",
+        "Justice-League-of-America-Archives-Vol.-3-1994.webp",
+        "Lazarus-Fallen-4-2025.webp",
+        "Orphan-and-the-Five-Beasts-Bath-of-Blood-1-2025.webp",
+        "Red-Vector-2-2025.webp",
+        "Riptide-2025.webp",
+        "Skinbreaker-1-2025.webp",
+        "Superman-Unlimited-5-2025.webp",
+        "The-Bleiberg-Project-1-3-2017-2019.webp",
+        "The-Mortal-Thor-2-2025.webp",
+        "The-New-Mutants-1982-GN.webp",
+        "The-Pale-Knight-5-2025.webp",
+        "The-Phantom-1-2025.webp",
+        "The-Punisher-Assassins-Guild-1988-2018-GN.webp",
+        "The-Red-Star-Sword-of-Lies-1-3-2006-2008.webp",
+        "The-Shadow-Planet-2025.webp",
+        "The-Voice-Said-Kill-3-2025.webp",
+        "Ultimate-Hawkeye-1-2025.webp",
+        "Undiscovered-Country-33-2025.webp",
+        "Universal-Monsters-The-Invisible-Man-2-2025.webp",
+        "Wolverine-Bloody-Choices-1-1991.webp",
+        "Young-Avengers-Ultimate-Collection-TPB-2010.webp",
+      ];
+
+      const comics = document.querySelector(".comics");
+      const element = document.querySelector(".comic");
+
+      for (i = 1; i < num_comics; i++) {
+        const comic = element.cloneNode(true);
+        const src = images[i % images.length];
+        comic.querySelector("img").src = `assets/${src}`;
+        comics.append(comic);
+      }
+    </script>
+  </body>
+</html>

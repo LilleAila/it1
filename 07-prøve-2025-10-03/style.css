@@ -1,0 +1,169 @@
+:root {
+  --bg: #eeeeee;
+  --bg2: #dddddd;
+  --fg: #222222;
+  --fg2: #333333;
+  --accent: #ffbfc0;
+}
+
+body {
+  font-family: "IBM Plex Sans", sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg);
+}
+
+img {
+  border-radius: 12px;
+}
+
+.nav {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 1;
+
+  background-color: var(--fg);
+  color: var(--bg);
+  padding: 0.5rem;
+
+  & > ul {
+    list-style: none;
+    display: flex;
+    justify-content: space-evenly;
+    gap: 3rem;
+    margin: 0.5rem;
+
+    & a {
+      text-decoration: none;
+      color: inherit;
+      background-color: var(--fg);
+      padding: 1rem;
+      border-radius: 12px;
+      transition:
+        transform 200ms ease,
+        background-color 200ms ease;
+      display: inline-block;
+      font-size: 1.1rem;
+
+      &:hover {
+        transform: scale(1.1);
+        background-color: var(--fg2);
+      }
+
+      &:active {
+        transform: scale(0.9);
+      }
+    }
+  }
+}
+
+.header {
+  background-color: var(--bg2);
+  padding: 1rem;
+  text-align: center;
+  border-bottom: 1px solid var(--fg);
+}
+
+.main {
+  padding: 2rem;
+}
+
+.comics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  margin-top: 2rem;
+  gap: 3rem;
+  place-items: center;
+}
+
+.comic {
+  width: 100%;
+
+  img {
+    transition: transform 200ms ease;
+    width: 100%;
+
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+}
+
+.comic-details {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  grid-template-areas:
+    "a a a b b b"
+    "c c d d e e";
+  gap: 1rem;
+
+  .text,
+  .image {
+    padding: 1rem;
+    background-color: var(--bg2);
+    border-radius: 12px;
+  }
+
+  #maintext {
+    grid-area: a;
+
+    background-color: var(--accent);
+
+    img {
+      margin-left: 2rem;
+    }
+  }
+
+  #cover {
+    grid-area: b;
+
+    figure {
+      text-align: center;
+
+      img {
+        width: 100%;
+      }
+    }
+  }
+
+  #about {
+    grid-area: c;
+  }
+
+  #author {
+    grid-area: d;
+  }
+
+  #illustrator {
+    grid-area: e;
+  }
+}
+
+@media only screen and (max-width: 1200px) {
+  .comic-details {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-areas:
+      "a a"
+      "b b"
+      "c d"
+      "e e";
+  }
+
+  #cover img {
+    max-height: 80vh;
+    width: auto !important;
+  }
+}
+
+@media only screen and (max-width: 800px) {
+  .comic-details {
+    grid-template-columns: repeat(1, 1fr);
+    grid-template-areas:
+      "a"
+      "b"
+      "c"
+      "d"
+      "e";
+  }
+}
