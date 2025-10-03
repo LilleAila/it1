@@ -7,3 +7,5 @@ Oppgaven ligger [her](https://github.com/hausnes/webutvikling/tree/aa6f3f1d18851
 ```sh
 python3 -m http.server
 ```
+
+, eller se den live på `https://olai.dev/it1/prøve-2025-10-03`. Merk at lenker som for eksempel "Hjem"-knappen ikke virker her fordi den vil peke mot root av hele treet, og sende deg til `https://olai.dev`.
