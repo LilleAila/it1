@@ -7,10 +7,12 @@
   class Square {
     shown: bool;
     mine: bool;
+    flag: bool;
 
     constructor(mine: bool) {
       this.shown = false;
       this.mine = mine;
+      this.flag = false;
     }
   }
 
@@ -45,6 +47,10 @@
     game.update(g => {
       const square = g[row][col];
 
+      if (square.flag) {
+        return g;
+      }
+
       if (gameActive) {
         square.shown = true;
       }
@@ -67,6 +73,18 @@
       return g;
     })
   }
+
+  function toggleFlag(row: number, col: number) {
+    game.update(g => {
+      const square = g[row][col];
+
+      if (!square.shown) {
+        square.flag = !square.flag;
+      }
+
+      return g;
+    })
+  }
 </script>
 
 <div class="gameContainer {gameActive ? 'active' : ''}">
@@ -81,7 +99,15 @@
   <div class="game {gameActive ? 'active' : ''}">
     {#each $game as row, rowIdx}
       {#each row as square, colIdx}
-        <button aria-label="square" class="square {square.shown ? 'shown' : ''}" onclick={() => showSquare(rowIdx, colIdx)}>
+        <button
+          aria-label="square"
+          class="square {square.shown ? 'shown' : ''} {square.flag ? 'flag' : ''}"
+          onclick={() => showSquare(rowIdx, colIdx)}
+          oncontextmenu={(e) => {
+            e.preventDefault();
+            toggleFlag(rowIdx, colIdx);
+          }}
+        >
           {#if square.mine}
             <span class="content mine">M</span>
           {:else}
@@ -157,11 +183,11 @@
       border-color: #888888 #AAAAAA #AAAAAA #888888;
     }
 
-    &:not(.shown) {
-      .content {
-        visibility: hidden;
-      }
+    &:not(.shown) .content {
+      visibility: hidden;
+    }
 
+    &:not(.shown):not(.flag) {
       background-color: #BBBBBB;
       border: 1rem solid;
       border-color: #CCCCCC #AAAAAA #AAAAAA #CCCCCC;
@@ -179,5 +205,11 @@
         border-color: #AAAAAA #888888 #888888 #AAAAAA;
       }
     }
+
+    &.flag {
+      background-color: #EE0000;
+      border-color: #FF0000 #DD0000 #DD0000 #FF0000;
+    }
+
   }
 </style>
