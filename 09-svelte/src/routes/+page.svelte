@@ -1,6 +1,9 @@
 <script lang="ts">
   import {writable} from "svelte/store";
 
+  let gameActive: bool = true;
+  let gameWon: bool = false;
+
   class Square {
     shown: bool;
     mine: bool;
@@ -41,9 +44,20 @@
   function showSquare(row: number, col: number) {
     game.update(g => {
       const square = g[row][col];
-      square.shown = true;
+
+      if (gameActive) {
+        square.shown = true;
+      }
+
       if (square.mine) {
-        alert("nah bro tapte")
+        gameWon = false;
+        gameActive = false;
+        return g;
+      }
+
+      if (g.every((row, _) => row.every((square, _) => square.shown || square.mine))) {
+        gameWon = true;
+        gameActive = false;
       }
 
       if (mines(row, col) == 0) {
@@ -55,29 +69,60 @@
   }
 </script>
 
-<div class="game">
-  {#each $game as row, rowIdx}
-    {#each row as square, colIdx}
-      <button aria-label="square" class="square {square.shown ? 'shown' : ''}" onclick={() => showSquare(rowIdx, colIdx)}>
-        {#if square.mine}
-          <span class="content mine">M</span>
-        {:else}
-          <span class="content adjacentMines mines-{mines(rowIdx, colIdx)}">{mines(rowIdx, colIdx)}</span>
-        {/if}
-      </button>
+<div class="gameContainer {gameActive ? 'active' : ''}">
+  <div class="gameState">
+    {#if gameWon}
+      Du vant!
+    {:else}
+      Du tapte :(
+    {/if}
+  </div>
+
+  <div class="game {gameActive ? 'active' : ''}">
+    {#each $game as row, rowIdx}
+      {#each row as square, colIdx}
+        <button aria-label="square" class="square {square.shown ? 'shown' : ''}" onclick={() => showSquare(rowIdx, colIdx)}>
+          {#if square.mine}
+            <span class="content mine">M</span>
+          {:else}
+            <span class="content adjacentMines mines-{mines(rowIdx, colIdx)}">{mines(rowIdx, colIdx)}</span>
+          {/if}
+        </button>
+      {/each}
     {/each}
-  {/each}
+  </div>
 </div>
 
+
 <style>
+  .gameContainer {
+    background-color: #DDDDDD;
+    width: 90vmin;
+    padding: 1rem;
+
+    &.active .gameState {
+      visibility: hidden;
+    }
+  }
+
+  .gameState {
+    margin-bottom: 1rem;
+    font-size: 3rem;
+    text-align: center;
+    font-family: monospace;
+  }
+
   .game {
-    width: 40rem;
-    height: 40rem;
+    width: 100%;
+    aspect-ratio: 1 / 1;
     background-color: #DDDDDD;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 1rem;
-    padding: 1rem;
+
+    &:not(.active) {
+      pointer-events: none;
+    }
   }
 
   .square {
@@ -85,7 +130,8 @@
 
     .content {
       font-family: monospace;
-      font-size: 5rem;
+      font-size: 4rem;
+      aspect-ratio: 1 / 1;
     }
 
     .adjacentMines {
