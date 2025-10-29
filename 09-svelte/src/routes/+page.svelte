@@ -45,15 +45,13 @@
 
   function showSquare(row: number, col: number) {
     game.update(g => {
+      if (!gameActive) return g;
+
       const square = g[row][col];
 
-      if (square.flag) {
-        return g;
-      }
+      if (square.flag) return g;
 
-      if (gameActive) {
-        square.shown = true;
-      }
+      square.shown = true;
 
       if (square.mine) {
         gameWon = false;
