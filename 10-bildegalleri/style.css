@@ -1,0 +1,30 @@
+main {
+  width: 100dvw;
+  height: 100dvh;
+  display: grid;
+  place-items: center;
+}
+
+.gallery {
+  height: 70dvh;
+  width: 50vw;
+  display: grid;
+  grid-template-columns: 5rem 1fr 5rem;
+  grid-template-rows: 100%;
+  gap: 1rem;
+  place-items: stretch center;
+  user-select: none;
+}
+
+.image {
+  max-height: 100%;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.navbutton {
+  width: 100%;
+  font-size: 3rem;
+}
