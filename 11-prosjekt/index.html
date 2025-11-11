@@ -3,12 +3,41 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Insert title</title>
+    <title>Donkeytype</title>
     <link rel="stylesheet" href="style.css" />
     <link rel="icon" href="favicon.png" />
+
+    <script type="module" defer src="./script.js"></script>
   </head>
   <body>
-    <main></main>
+    <main>
+      <header>
+        <h1>Donkeytype</h1>
+        <p>
+          Dette er en nettside inspirert av
+          <a href="https://monkeytype.com">MonkeyType</a>, der du kan teste hvor
+          fort du skriver!
+        </p>
+      </header>
+
+      <article>
+        <div class="text-display"></div>
+
+        <input
+          id="text-input"
+          class="input"
+          type="text"
+          placeholder="Start typing..."
+        />
+
+        <section>
+          <ul class="results">
+            <li>WPM: 100</li>
+            <li>Accuracy: 95%</li>
+            <li>Time: 123</li>
+          </ul>
+        </section>
+      </article>
+    </main>
   </body>
 </html>
-
