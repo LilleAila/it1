@@ -1,0 +1,8 @@
+# Typing test thing
+
+- [x] MVP
+- [ ] Save to cookie / localstorage
+- [ ] Rewrite JS using OOP
+- [ ] Live timer
+- [ ] Time-based rather than word-based
+- [ ] Automatic scrolling at overflow
