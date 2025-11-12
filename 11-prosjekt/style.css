@@ -101,7 +101,6 @@ input {
 button {
   background-color: var(--base0D);
   border-radius: 0;
-  border: none;
   padding: 0.5rem;
   border: 1px solid var(--base02);
   color: var(--base00);
