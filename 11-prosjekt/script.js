@@ -37,15 +37,24 @@ function renderWords() {
     const w = activeTest.words[i];
     const element = document.createElement("span");
     element.className = "word";
-    element.id = `w-${i}`;
     element.textContent = w.word;
     wordContainer.appendChild(element);
+    w.element = element;
   }
 }
 
 const input = document.querySelector("#text-input");
 
 function submitWord(word) {
+  const nextWord = activeTest.words[activeTest.currentWord];
+
+  nextWord.correct = word == nextWord.word;
+  nextWord.passed = true;
+
+  nextWord.element.classList.add("passed");
+  nextWord.element.classList.add(nextWord.correct ? "correct" : "incorrect");
+  console.log(nextWord.element);
+
   activeTest.currentWord += 1;
 
   if (activeTest.currentWord >= activeTest.words.length) {
@@ -54,14 +63,6 @@ function submitWord(word) {
     // TODO: handle test done
     return;
   }
-
-  const nextWord = activeTest.words[activeTest.currentWord];
-
-  nextWord.correct = word == nextWord;
-  nextWord.passed = true;
-
-  const wordElement = document.querySelector(`#w-${activeTest.currentWord}`);
-  // TODO: add the proper classes for passed and for incorrect
 }
 
 input.addEventListener("keydown", (e) => {

@@ -3,3 +3,14 @@
   flex-wrap: wrap;
   gap: 0.5ch;
 }
+
+.word {
+  &.passed {
+    color: gray;
+  }
+
+  &.incorrect {
+    background-color: red;
+    color: white;
+  }
+}
