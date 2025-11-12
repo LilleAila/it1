@@ -46,6 +46,9 @@ function newTest() {
   });
 
   renderWords();
+
+  activeTest.words[0].element.classList.add("next");
+  input.focus();
 }
 
 document.querySelector("#new-test").addEventListener("click", newTest);
@@ -54,7 +57,7 @@ function renderWords() {
   for (let i = 0; i < activeTest.words.length; i++) {
     const w = activeTest.words[i];
     const element = document.createElement("span");
-    element.className = "word";
+    element.classList.add("word");
     element.textContent = w.word;
     wordContainer.appendChild(element);
     w.element = element;
@@ -77,6 +80,8 @@ function submitWord(typed) {
   word.correct = word.typed === word.word;
   word.passed = true;
 
+  word.element.classList.remove("next");
+
   [word.correctChars, word.incorrectChars] = compareWords(
     word.typed,
     word.word,
@@ -95,7 +100,9 @@ function submitWord(typed) {
     return;
   }
 
-  activeTest.words[activeTest.currentWord].start = new Date();
+  const nextWord = activeTest.words[activeTest.currentWord];
+  nextWord.start = new Date();
+  nextWord.element.classList.add("next");
 }
 
 function formatTime(ms) {
@@ -115,6 +122,8 @@ function endTest() {
   const minutes = time / 60000;
 
   const spaces = activeTest.words.length - 1;
+  const targetChars =
+    activeTest.words.reduce((a, i) => a + i.word.length, 0) + spaces;
   const chars =
     activeTest.words.reduce((a, i) => a + i.typed.length, 0) + spaces;
   const correctChars =
@@ -122,7 +131,7 @@ function endTest() {
 
   const rawWpm = chars / 5 / minutes; // Measure wpm with one word defined as 5 characters on average.
   const wpm = correctChars / 5 / minutes;
-  const accuracy = (correctChars / chars) * 100;
+  const accuracy = (correctChars / targetChars) * 100;
 
   const stats = [
     ["WPM", `${floorTo(wpm, 1)}`],
@@ -136,10 +145,12 @@ function endTest() {
 
     const key = document.createElement("td");
     key.textContent = k;
+    key.classList.add("key");
     row.appendChild(key);
 
     const value = document.createElement("td");
     value.textContent = v;
+    value.classList.add("value");
     row.appendChild(value);
 
     statsContainer.appendChild(row);
@@ -153,8 +164,7 @@ input.addEventListener("keydown", (e) => {
     activeTest.words[0].start = new Date();
   }
   if (e.key === " ") {
-    // TODO: maybe remove the .toLowerCase() in the future to support quotes etc?
-    submitWord(input.value.trim().toLowerCase());
+    submitWord(input.value.trim());
     input.value = "";
     e.preventDefault();
   }
