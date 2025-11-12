@@ -36,6 +36,7 @@ function newTest() {
   activeTest.started = false;
   activeTest.currentWord = 0;
   input.disabled = false;
+  input.value = "";
 
   removeChildren(wordContainer);
   removeChildren(statsContainer);
