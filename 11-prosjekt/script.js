@@ -164,7 +164,6 @@ input.addEventListener("keydown", (e) => {
     activeTest.started = true;
     activeTest.words[0].start = new Date();
   }
-  console.log(e);
   if (e.code === "Space") {
     submitWord(input.value.trim());
     input.value = "";
