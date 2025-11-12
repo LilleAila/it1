@@ -159,15 +159,16 @@ function endTest() {
 }
 
 input.addEventListener("keydown", (e) => {
-  if (activeTest.currentWord === 0 && !activeTest.started) {
+  if (e.code === "Space") {
+    if (input.value !== "") {
+      submitWord(input.value.trim());
+      input.value = "";
+    }
+    e.preventDefault();
+  } else if (activeTest.currentWord === 0 && !activeTest.started) {
     // Starts the test
     activeTest.started = true;
     activeTest.words[0].start = new Date();
-  }
-  if (e.code === "Space") {
-    submitWord(input.value.trim());
-    input.value = "";
-    e.preventDefault();
   }
 });
 
