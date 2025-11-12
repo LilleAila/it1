@@ -35,6 +35,19 @@ hr {
   border: 1px solid var(--base06);
 }
 
+#config {
+  display: flex;
+  flex-direction: row;
+  align-items: end;
+  gap: 1rem;
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+}
+
 .game {
   width: 100%;
   display: flex;
@@ -50,6 +63,7 @@ hr {
   justify-content: center;
   width: 70%;
   gap: 0.5rem;
+  margin: 2rem 0;
 }
 
 .word {
@@ -89,6 +103,7 @@ button {
   border-radius: 0;
   border: none;
   padding: 0.5rem;
+  border: 1px solid var(--base02);
   color: var(--base00);
 
   transition: transform 200ms ease;

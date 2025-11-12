@@ -31,6 +31,7 @@ let activeTest = {
 const statsContainer = document.querySelector(".stats > tbody");
 const wordContainer = document.querySelector(".text-display");
 const input = document.querySelector("#text-input");
+const configForm = document.querySelector("#config");
 
 function newTest() {
   activeTest.started = false;
@@ -168,6 +169,13 @@ input.addEventListener("keydown", (e) => {
     input.value = "";
     e.preventDefault();
   }
+});
+
+configForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const form = e.target;
+  activeTest.length = parseInt(form.wordCount.value);
+  newTest();
 });
 
 (() => {
