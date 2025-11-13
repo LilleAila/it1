@@ -168,7 +168,7 @@ function centerNext() {
   const containerRect = wordContainer.getBoundingClientRect();
   const nextRect = next.getBoundingClientRect();
   const lineCenter = nextRect.top + nextRect.height / 2 - containerRect.top;
-  const offset = Math.round(
+  const offset = Math.floor(
     wordContainer.scrollTop + lineCenter - wordContainer.clientHeight / 2,
   );
   // Equivalent but the first also requires css scroll-behavior: smooth
