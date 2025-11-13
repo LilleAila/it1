@@ -122,17 +122,20 @@ function endTest() {
   const time = activeTest.words.reduce((a, i) => a + i.time, 0);
   const minutes = time / 60000;
 
-  const spaces = activeTest.words.length - 1;
-  const targetChars =
-    activeTest.words.reduce((a, i) => a + i.word.length, 0) + spaces;
-  const chars =
-    activeTest.words.reduce((a, i) => a + i.typed.length, 0) + spaces;
-  const correctChars =
-    activeTest.words.reduce((a, i) => a + i.correctChars, 0) + spaces;
+  const spaces = activeTest.words.filter((w) => w.correct).length;
+  const targetChars = activeTest.words.reduce((a, i) => a + i.word.length, 0);
+  const chars = activeTest.words.reduce((a, i) => a + i.typed.length, 0);
+  const correctChars = activeTest.words.reduce((a, i) => a + i.correctChars, 0);
+  const incorrectChars = activeTest.words.reduce(
+    (a, i) => a + i.incorrectChars,
+    0,
+  );
 
-  const rawWpm = chars / 5 / minutes; // Measure wpm with one word defined as 5 characters on average.
-  const wpm = correctChars / 5 / minutes;
-  const accuracy = (correctChars / targetChars) * 100;
+  const totalChars = Math.max(targetChars, chars);
+
+  const rawWpm = (chars + spaces) / 5 / minutes; // Measure wpm with one word defined as 5 characters on average.
+  const wpm = (correctChars + spaces) / 5 / minutes;
+  const accuracy = (correctChars / totalChars) * 100;
 
   const stats = [
     ["WPM", `${floorTo(wpm, 1)}`],
