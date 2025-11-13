@@ -5,4 +5,4 @@
 - [ ] Rewrite JS using OOP
 - [ ] Live timer
 - [ ] Time-based rather than word-based
-- [ ] Automatic scrolling at overflow
+- [x] Automatic scrolling at overflow

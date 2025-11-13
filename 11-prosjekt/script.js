@@ -47,8 +47,9 @@ function newTest() {
   });
 
   renderWords();
-
   activeTest.words[0].element.classList.add("next");
+  centerNext();
+
   input.focus();
 }
 
@@ -104,6 +105,7 @@ function submitWord(typed) {
   const nextWord = activeTest.words[activeTest.currentWord];
   nextWord.start = new Date();
   nextWord.element.classList.add("next");
+  centerNext();
 }
 
 function formatTime(ms) {
@@ -161,6 +163,22 @@ function endTest() {
   }
 }
 
+function centerNext() {
+  const next = activeTest.words[activeTest.currentWord].element;
+  const containerRect = wordContainer.getBoundingClientRect();
+  const nextRect = next.getBoundingClientRect();
+  const nextTopInContainer =
+    nextRect.top - containerRect.top + wordContainer.scrollTop;
+  const offset =
+    nextTopInContainer - wordContainer.clientHeight / 2 + next.offsetHeight / 2;
+  // Equivalent but the first also requires css scroll-behavior: smooth
+  // wordContainer.scrollTop = offset;
+  wordContainer.scrollTo({
+    top: offset,
+    behavior: "smooth",
+  });
+}
+
 input.addEventListener("keydown", (e) => {
   if (e.code === "Space") {
     if (input.value !== "") {
@@ -181,6 +199,8 @@ document.addEventListener("keydown", (e) => {
     e.preventDefault();
   }
 });
+
+window.addEventListener("resize", centerNext);
 
 configForm.addEventListener("submit", (e) => {
   e.preventDefault();
