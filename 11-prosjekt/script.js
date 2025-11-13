@@ -167,10 +167,10 @@ function centerNext() {
   const next = activeTest.words[activeTest.currentWord].element;
   const containerRect = wordContainer.getBoundingClientRect();
   const nextRect = next.getBoundingClientRect();
-  const nextTopInContainer =
-    nextRect.top - containerRect.top + wordContainer.scrollTop;
-  const offset =
-    nextTopInContainer - wordContainer.clientHeight / 2 + next.offsetHeight / 2;
+  const lineCenter = nextRect.top + nextRect.height / 2 - containerRect.top;
+  const offset = Math.round(
+    wordContainer.scrollTop + lineCenter - wordContainer.clientHeight / 2,
+  );
   // Equivalent but the first also requires css scroll-behavior: smooth
   // wordContainer.scrollTop = offset;
   wordContainer.scrollTo({
