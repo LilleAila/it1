@@ -1,5 +1,7 @@
 with import <nixpkgs> {}; mkShell {
   packages = [
+    live-server
+
     nodejs_22
     bun
 
