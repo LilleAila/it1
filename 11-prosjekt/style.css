@@ -58,6 +58,15 @@ hr {
   box-sizing: border-box;
 }
 
+.live-stats {
+  display: flex;
+  width: 30%;
+  justify-content: space-between;
+  font-family: "JetBrains Mono", monospace;
+  color: var(--base04);
+  font-size: 1.2rem;
+}
+
 .text-display {
   display: flex;
   flex-wrap: wrap;
