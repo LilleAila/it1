@@ -84,8 +84,7 @@ hr {
   }
 
   &.incorrect {
-    background-color: var(--base08);
-    color: var(--base07);
+    color: var(--base08);
   }
 }
 
