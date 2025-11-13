@@ -47,7 +47,7 @@ function newTest() {
   });
 
   renderWords();
-  activeTest.words[0].element.classList.add("next");
+  activeTest.words[0].element.id = "next";
   centerNext();
 
   input.focus();
@@ -82,7 +82,7 @@ function submitWord(typed) {
   word.correct = word.typed === word.word;
   word.passed = true;
 
-  word.element.classList.remove("next");
+  word.element.removeAttribute("id");
 
   [word.correctChars, word.incorrectChars] = compareWords(
     word.typed,
@@ -104,7 +104,7 @@ function submitWord(typed) {
 
   const nextWord = activeTest.words[activeTest.currentWord];
   nextWord.start = new Date();
-  nextWord.element.classList.add("next");
+  nextWord.element.id = "next";
   centerNext();
 }
 
