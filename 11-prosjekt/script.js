@@ -38,6 +38,8 @@ const configForm = document.querySelector("#config");
 const liveWords = document.querySelector("#live-words");
 const liveTime = document.querySelector("#live-time");
 
+const newTestButton = document.querySelector("#new-test");
+
 function newTest() {
   activeTest.started = false;
   activeTest.currentWord = 0;
@@ -45,7 +47,10 @@ function newTest() {
   input.value = "";
 
   removeChildren(wordContainer);
-  removeChildren(statsContainer);
+
+  setTimeout(() => {
+    removeChildren(statsContainer);
+  }, 100);
 
   activeTest.words = getWords(activeTest.length).map((w) => {
     return { word: w, passed: false, correct: false };
@@ -59,9 +64,10 @@ function newTest() {
   startLiveUpdate();
 
   input.focus();
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-document.querySelector("#new-test").addEventListener("click", newTest);
+newTestButton.addEventListener("click", newTest);
 
 function renderWords() {
   for (let i = 0; i < activeTest.words.length; i++) {
@@ -120,7 +126,6 @@ function formatTime(ms, withMs = false) {
   const minutes = Math.floor(ms / 60000);
   const seconds = Math.floor((ms % 60000) / 1000);
   const milliseconds = Math.floor((ms % 1000) / 10);
-  console.log(milliseconds);
 
   const msFormat = withMs ? `.${String(milliseconds).padEnd(2, "0")}` : "";
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}${msFormat}`;
@@ -173,6 +178,8 @@ function endTest() {
     statsContainer.appendChild(row);
   }
 
+  scrollTo(newTestButton, 12);
+
   clearInterval(activeTest.interval);
   updateLive();
 }
@@ -204,6 +211,11 @@ function updateLive() {
 function startLiveUpdate() {
   updateLive();
   activeTest.interval = setInterval(updateLive, 100);
+}
+
+function scrollTo(element, offset = 0) {
+  const y = element.getBoundingClientRect().top + window.pageYOffset - offset;
+  window.scrollTo({ top: y, behavior: "smooth" });
 }
 
 input.addEventListener("keydown", (e) => {
