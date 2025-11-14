@@ -184,5 +184,6 @@ input[type="number"] {
 
   &.completed {
     opacity: 0.5;
+    filter: blur(2px);
   }
 }
