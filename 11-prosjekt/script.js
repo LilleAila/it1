@@ -50,7 +50,7 @@ function newTest() {
 
   setTimeout(() => {
     removeChildren(statsContainer);
-  }, 100);
+  }, 150);
 
   activeTest.words = getWords(activeTest.length).map((w) => {
     return { word: w, passed: false, correct: false };
@@ -218,8 +218,12 @@ function scrollTo(element, offset = 0) {
   window.scrollTo({ top: y, behavior: "smooth" });
 }
 
-input.addEventListener("keydown", (e) => {
-  if (e.code === "Space") {
+input.addEventListener("input", (e) => {
+  if (activeTest.currentWord >= activeTest.length - 1) {
+    if (input.value.trim() == activeTest.words.at(-1).word) {
+      submitWord(input.value.trim());
+    }
+  } else if (e.data === " ") {
     if (input.value !== "") {
       submitWord(input.value.trim());
       input.value = "";
