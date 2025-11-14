@@ -6,4 +6,4 @@
 - [x] Live timer
 - [ ] Time-based rather than word-based
 - [x] Automatic scrolling at overflow
-- [ ] favicon
+- [x] favicon
