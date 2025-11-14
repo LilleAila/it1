@@ -26,12 +26,17 @@ let activeTest = {
   length: 10,
   words: [],
   currentWord: 0,
+  interval: null,
 };
 
 const statsContainer = document.querySelector(".stats > tbody");
 const wordContainer = document.querySelector(".text-display");
+const testContainer = document.querySelector(".test");
 const input = document.querySelector("#text-input");
 const configForm = document.querySelector("#config");
+
+const liveWords = document.querySelector("#live-words");
+const liveTime = document.querySelector("#live-time");
 
 function newTest() {
   activeTest.started = false;
@@ -48,7 +53,10 @@ function newTest() {
 
   renderWords();
   activeTest.words[0].element.id = "next";
+  testContainer.classList.remove("completed");
   centerNext();
+
+  startLiveUpdate();
 
   input.focus();
 }
@@ -108,16 +116,19 @@ function submitWord(typed) {
   centerNext();
 }
 
-function formatTime(ms) {
+function formatTime(ms, withMs = false) {
   const minutes = Math.floor(ms / 60000);
   const seconds = Math.floor((ms % 60000) / 1000);
-  const milliseconds = ms % 1000;
+  const milliseconds = Math.floor((ms % 1000) / 10);
+  console.log(milliseconds);
 
-  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}.${String(milliseconds).padStart(2, "0")}`;
+  const msFormat = withMs ? `.${String(milliseconds).padEnd(2, "0")}` : "";
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}${msFormat}`;
 }
 
 function endTest() {
   input.disabled = true;
+  testContainer.classList.add("completed");
 
   // Time is counted per word to make it easier to expand in the future.
   // The difference is negligible compared to only comparing start and end times
@@ -143,7 +154,7 @@ function endTest() {
     ["WPM", `${floorTo(wpm, 1)}`],
     ["Raw WPM", `${floorTo(rawWpm, 1)}`],
     ["Accuracy", `${floorTo(accuracy, 1)}%`],
-    ["Time", formatTime(time)],
+    ["Time", formatTime(time, true)],
   ];
 
   for (const [k, v] of stats) {
@@ -161,6 +172,9 @@ function endTest() {
 
     statsContainer.appendChild(row);
   }
+
+  clearInterval(activeTest.interval);
+  updateLive();
 }
 
 function centerNext() {
@@ -177,6 +191,19 @@ function centerNext() {
     top: offset,
     behavior: "smooth",
   });
+}
+
+function updateLive() {
+  liveWords.textContent = `${activeTest.currentWord}/${activeTest.length}`;
+
+  const now = new Date();
+  const timeDelta = now - (activeTest.words[0].start ?? now);
+  liveTime.textContent = formatTime(timeDelta);
+}
+
+function startLiveUpdate() {
+  updateLive();
+  activeTest.interval = setInterval(updateLive, 100);
 }
 
 input.addEventListener("keydown", (e) => {

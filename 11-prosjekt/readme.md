@@ -3,7 +3,7 @@
 - [x] MVP
 - [ ] Save to cookie / localstorage
 - [ ] Rewrite JS using OOP
-- [>] Live timer
+- [x] Live timer
 - [ ] Time-based rather than word-based
 - [x] Automatic scrolling at overflow
 - [ ] favicon
