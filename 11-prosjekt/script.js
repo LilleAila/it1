@@ -219,10 +219,11 @@ function scrollTo(element, offset = 0) {
 }
 
 input.addEventListener("input", (e) => {
-  if (activeTest.currentWord >= activeTest.length - 1) {
-    if (input.value.trim() == activeTest.words.at(-1).word) {
-      submitWord(input.value.trim());
-    }
+  if (
+    activeTest.currentWord >= activeTest.length - 1 &&
+    input.value.trim() == activeTest.words.at(-1).word
+  ) {
+    submitWord(input.value.trim());
   } else if (e.data === " ") {
     if (input.value !== "") {
       submitWord(input.value.trim());
