@@ -237,6 +237,9 @@ input.addEventListener("input", (e) => {
   }
 });
 
+input.addEventListener("paste", (e) => e.preventDefault());
+input.addEventListener("drop", (e) => e.preventDefault());
+
 document.addEventListener("keydown", (e) => {
   if (e.code === "Tab") {
     newTest();
