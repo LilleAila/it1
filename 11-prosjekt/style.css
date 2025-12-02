@@ -87,6 +87,10 @@ hr {
   font-family: "JetBrains Mono", monospace;
   color: var(--base04);
   font-size: 1.2rem;
+
+  #live-wpm:not(.valid) {
+    visibility: hidden;
+  }
 }
 
 .text-display {

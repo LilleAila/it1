@@ -37,6 +37,7 @@ const configForm = document.querySelector("#config");
 
 const liveWords = document.querySelector("#live-words");
 const liveTime = document.querySelector("#live-time");
+const liveWpm = document.querySelector("#live-wpm");
 
 const newTestButton = document.querySelector("#new-test");
 
@@ -131,6 +132,21 @@ function formatTime(ms, withMs = false) {
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}${msFormat}`;
 }
 
+function getWpm() {
+  const passedWords = activeTest.words.filter((w) => w.passed);
+
+  const time = passedWords.reduce((a, i) => a + i.time, 0);
+  const minutes = time / 60000;
+
+  const spaces = passedWords.filter((w) => w.correct).length;
+  const targetChars = passedWords.reduce((a, i) => a + i.word.length, 0);
+  const correctChars = passedWords.reduce((a, i) => a + i.correctChars, 0);
+
+  const wpm = (correctChars + spaces) / 5 / minutes;
+
+  return wpm;
+}
+
 function endTest() {
   input.disabled = true;
   testContainer.classList.add("completed");
@@ -206,6 +222,10 @@ function updateLive() {
   const now = new Date();
   const timeDelta = now - (activeTest.words[0].start ?? now);
   liveTime.textContent = formatTime(timeDelta);
+
+  const wpm = Math.floor(getWpm());
+  liveWpm.textContent = wpm.toString();
+  liveWpm.classList.toggle("valid", !isNaN(wpm));
 }
 
 function startLiveUpdate() {
