@@ -1,7 +1,6 @@
-const speed = 1;
-const fps = 60;
-const dt = 1 / fps;
+const speed = 0.01;
 
+let lastTime = 0;
 let snows = [];
 const snowContainer = document.querySelector("#snowContainer");
 
@@ -33,10 +32,10 @@ function createSnow() {
   });
 }
 
-function moveSnow(snow) {
+function moveSnow(snow, dt) {
   const rad = snow.angle * (Math.PI / 180);
-  const dx = Math.cos(rad) * snow.speed * speed * dt;
-  const dy = Math.sin(rad) * snow.speed * speed * dt;
+  const dx = Math.cos(rad) * snow.speed * speed;
+  const dy = Math.sin(rad) * snow.speed * speed;
 
   snow.left += dx;
   snow.top += dy;
@@ -58,16 +57,24 @@ function handleOutside(snow, i) {
   }
 }
 
+function frame(time) {
+  if (!lastTime) lastTime = time;
+  const dt = (time - lastTime) / 1000;
+  lastTime = time;
+
+  for (let i = 0; i < snows.length; i++) {
+    const snow = snows[i];
+    moveSnow(snow, dt);
+    handleOutside(snow, i);
+  }
+
+  requestAnimationFrame(frame);
+}
+
 (() => {
   for (let i = 0; i < 200; i++) {
     createSnow();
   }
 
-  setInterval(() => {
-    for (let i = 0; i < snows.length; i++) {
-      const snow = snows[i];
-      moveSnow(snow);
-      handleOutside(snow, i);
-    }
-  }, dt * 1000);
+  requestAnimationFrame(frame);
 })();
