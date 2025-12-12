@@ -1,4 +1,4 @@
-const speed = 0.01;
+const speed = 1;
 
 let lastTime = 0;
 let snows = [];
@@ -34,8 +34,8 @@ function createSnow() {
 
 function moveSnow(snow, dt) {
   const rad = snow.angle * (Math.PI / 180);
-  const dx = Math.cos(rad) * snow.speed * speed;
-  const dy = Math.sin(rad) * snow.speed * speed;
+  const dx = Math.cos(rad) * snow.speed * speed * dt;
+  const dy = Math.sin(rad) * snow.speed * speed * dt;
 
   snow.left += dx;
   snow.top += dy;
