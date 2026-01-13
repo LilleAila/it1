@@ -21,13 +21,34 @@ async function submit(e) {
       console.log(d);
       const e = document.createElement("div");
       e.innerHTML = `
-        <h1>Definitions for <code>${d.word}<code>:</h1>
-        <ul>
+        <h1 class="title"><code>${d.word}</code></h1>
+        <ul class="definitions">
+          <li class="phonetics">
+            <ul>
+              ${mkList(
+                d.phonetics
+                  .filter((p) => p.text)
+                  .map(
+                    (p) => `
+                    ${p.text ? `<pre>${p.text}</pre>` : ""} ${
+                      "audio" in p && p.audio
+                        ? `
+                        <audio controls>
+                          <source src="${p.audio}" type="audio/mpeg">
+                        </audio>
+                        `
+                        : ""
+                    } ${"sourceUrl" in p ? `<span>(<a href="${p.sourceUrl}">Source</a> - ${mkLicense(p.license)})</span>` : ""}
+                    `,
+                  ),
+              )}
+            </ul>
+          </li>
           ${d.meanings
             .map(
               (m) => `
               <li>
-                <span>${m.partOfSpeech}</span>
+                <span class="type">${capitalize(m.partOfSpeech)}</span>
                 <ul>
                   ${mkList(
                     m.definitions.map(
@@ -90,24 +111,6 @@ async function submit(e) {
             )
             .join("")}
         </ul>
-        <h2>Phonetics:</h2>
-        <ul>
-          ${mkList(
-            d.phonetics.map(
-              (p) => `
-                ${p.text ? `<pre>${p.text}</pre>` : ""} ${
-                  "audio" in p && p.audio
-                    ? `
-                    <audio controls>
-                      <source src="${p.audio}" type="audio/mpeg">
-                    </audio>
-                    `
-                    : ""
-                } ${"sourceUrl" in p ? `(<a href="${p.sourceUrl}">Source</a> - ${mkLicense(p.license)})` : ""}
-                `,
-            ),
-          )}
-        </ul>
         <h2>Sources:</h2>
         <p>
           <ul>
@@ -131,6 +134,11 @@ function mkLicense(l) {
 }
 
 form.addEventListener("submit", submit);
+
+function capitalize(str) {
+  if (!str) return "";
+  return str[0].toUpperCase() + str.slice(1).toLowerCase();
+}
 
 (() => {
   // Debugging to automatically look up a word
