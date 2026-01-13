@@ -60,27 +60,30 @@ function renderDefinitions(ds) {
           <div>
             <h1 class="title"><code>${d.word}</code></h1>
             <ul class="definitions">
-              <li class="phonetics">
-                <ul>
-                  ${mkList(
-                    d.phonetics
-                      .filter((p) => p.text)
-                      .map(
-                        (p) => `
-                        ${p.text ? `<pre>${p.text}</pre>` : ""} ${
-                          "audio" in p && p.audio
-                            ? `
-                            <audio controls>
-                              <source src="${p.audio}" type="audio/mpeg">
-                            </audio>
-                            `
-                            : ""
-                        } ${"sourceUrl" in p ? `<span>(<a href="${p.sourceUrl}">Source</a> - ${mkLicense(p.license)})</span>` : ""}
-                        `,
-                      ),
-                  )}
-                </ul>
-              </li>
+              ${((ps) =>
+                ps.length > 0
+                  ? `
+                  <li class="phonetics">
+                    <ul>
+                      ${mkList(
+                        ps.map(
+                          (p) => `
+                            ${p.text ? `<pre>${p.text}</pre>` : ""} ${
+                              "audio" in p && p.audio
+                                ? `
+                                <audio controls>
+                                  <source src="${p.audio}" type="audio/mpeg">
+                                </audio>
+                                `
+                                : ""
+                            } ${"sourceUrl" in p ? `<span>(<a href="${p.sourceUrl}">Source</a> - ${mkLicense(p.license)})</span>` : ""}
+                          `,
+                        ),
+                      )}
+                    </ul>
+                  </li>
+                  `
+                  : "")(d.phonetics.filter((p) => p.text))}
               ${d.meanings
                 .map(
                   (m) => `
