@@ -1,5 +1,5 @@
 const form = document.querySelector("#form");
-const definitions = document.querySelector("#definitions");
+const results = document.querySelector("#results");
 
 async function submit(e) {
   e.preventDefault();
@@ -7,58 +7,95 @@ async function submit(e) {
   const response = await fetch(
     `https://api.dictionaryapi.dev/api/v2/entries/en/${data.get("query")}`,
   );
-  definitions.innerHTML = "";
 
   if (response.status != 200) {
-    definitions.innerHTML = `
-      <div class="error">
+    results.innerHTML = `
+      <div class="callout info">
+        <p>The requested word was not found.</p>
+      </div>
+    `;
+  } else if (response.status != 200) {
+    results.innerHTML = `
+      <div class="callout error">
         <p>An error occured.</p>
       </div>
     `;
   } else {
     const ds = await response.json();
-    for (const d of ds) {
-      console.log(d);
-      const e = document.createElement("div");
-      e.innerHTML = `
-        <h1 class="title"><code>${d.word}</code></h1>
-        <ul class="definitions">
-          <li class="phonetics">
-            <ul>
-              ${mkList(
-                d.phonetics
-                  .filter((p) => p.text)
+    results.innerHTML = `
+      <p class="summary">
+        Found ${ds.length} definition${ds.length > 1 ? "s" : ""}.
+      </p>
+      ${ds
+        .map(
+          (d) => `
+            <div>
+              <h1 class="title"><code>${d.word}</code></h1>
+              <ul class="definitions">
+                <li class="phonetics">
+                  <ul>
+                    ${mkList(
+                      d.phonetics
+                        .filter((p) => p.text)
+                        .map(
+                          (p) => `
+                          ${p.text ? `<pre>${p.text}</pre>` : ""} ${
+                            "audio" in p && p.audio
+                              ? `
+                              <audio controls>
+                                <source src="${p.audio}" type="audio/mpeg">
+                              </audio>
+                              `
+                              : ""
+                          } ${"sourceUrl" in p ? `<span>(<a href="${p.sourceUrl}">Source</a> - ${mkLicense(p.license)})</span>` : ""}
+                          `,
+                        ),
+                    )}
+                  </ul>
+                </li>
+                ${d.meanings
                   .map(
-                    (p) => `
-                    ${p.text ? `<pre>${p.text}</pre>` : ""} ${
-                      "audio" in p && p.audio
-                        ? `
-                        <audio controls>
-                          <source src="${p.audio}" type="audio/mpeg">
-                        </audio>
-                        `
-                        : ""
-                    } ${"sourceUrl" in p ? `<span>(<a href="${p.sourceUrl}">Source</a> - ${mkLicense(p.license)})</span>` : ""}
-                    `,
-                  ),
-              )}
-            </ul>
-          </li>
-          ${d.meanings
-            .map(
-              (m) => `
-              <li>
-                <span class="type">${capitalize(m.partOfSpeech)}</span>
-                <ul>
-                  ${mkList(
-                    m.definitions.map(
-                      (d) => `
-                      <p>${d.definition}</p>
+                    (m) => `
+                    <li>
+                      <span class="type">${capitalize(m.partOfSpeech)}</span>
+                      <ul>
+                        ${mkList(
+                          m.definitions.map(
+                            (d) => `
+                            <p>${d.definition}</p>
+                            ${
+                              d.synonyms.length > 0
+                                ? `
+                              <div>
+                                <h4>Synonyms</h4>
+                                <ul>
+                                  ${mkList(m.synonyms)}
+                                </ul>
+                              </div>
+                            `
+                                : ""
+                            }
+                            ${
+                              d.antonyms.length > 0
+                                ? `
+                              <div>
+                                <h4>Antonyms</h4>
+                                <ul>
+                                  ${mkList(m.antonyms)}
+                                </ul>
+                              </div>
+                            `
+                                : ""
+                            }
+                            `,
+                          ),
+                        )}
+                      </ul>
                       ${
-                        d.synonyms.length > 0
+                        m.synonyms.length > 0
                           ? `
                         <div>
-                          <h4>Synonyms</h4>
+                          <h3>Synonyms</h3>
                           <ul>
                             ${mkList(m.synonyms)}
                           </ul>
@@ -67,10 +104,10 @@ async function submit(e) {
                           : ""
                       }
                       ${
-                        d.antonyms.length > 0
+                        m.antonyms.length > 0
                           ? `
                         <div>
-                          <h4>Antonyms</h4>
+                          <h3>Antonyms</h3>
                           <ul>
                             ${mkList(m.antonyms)}
                           </ul>
@@ -78,50 +115,23 @@ async function submit(e) {
                       `
                           : ""
                       }
-                      `,
-                    ),
-                  )}
+                    </li>
+                  `,
+                  )
+                  .join("")}
+              </ul>
+              <h2>Sources:</h2>
+              <p>
+                <ul>
+                  ${mkList(d.sourceUrls.map((u) => `<a href="${u}">${u}</a>`))}
                 </ul>
-                ${
-                  m.synonyms.length > 0
-                    ? `
-                  <div>
-                    <h3>Synonyms</h3>
-                    <ul>
-                      ${mkList(m.synonyms)}
-                    </ul>
-                  </div>
-                `
-                    : ""
-                }
-                ${
-                  m.antonyms.length > 0
-                    ? `
-                  <div>
-                    <h3>Antonyms</h3>
-                    <ul>
-                      ${mkList(m.antonyms)}
-                    </ul>
-                  </div>
-                `
-                    : ""
-                }
-              </li>
-            `,
-            )
-            .join("")}
-        </ul>
-        <h2>Sources:</h2>
-        <p>
-          <ul>
-            ${mkList(d.sourceUrls.map((u) => `<a href="${u}">${u}</a>`))}
-          </ul>
-          License: ${mkLicense(d.license)}
-        </p>
-      `;
-
-      definitions.appendChild(e);
-    }
+                License: ${mkLicense(d.license)}
+              </p>
+            </div>
+          `,
+        )
+        .join("<hr />")}
+    `;
   }
 }
 
@@ -140,9 +150,9 @@ function capitalize(str) {
   return str[0].toUpperCase() + str.slice(1).toLowerCase();
 }
 
-(() => {
-  // Debugging to automatically look up a word
-  form.query.value = "hello"; // success
-  // form.query.value = "helloooooooooo"; // failure
-  form.submit.click();
-})();
+// (() => {
+//   // Debugging to automatically look up a word
+//   form.query.value = "hello"; // success
+//   // form.query.value = "helloooooooooo"; // failure
+//   form.submit.click();
+// })();
