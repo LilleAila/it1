@@ -1,0 +1,57 @@
+@startuml
+left to right direction
+skinparam linetype ortho
+hide circle
+
+entity Artist {
+  +id: int <<PK>>
+  --
+  name: str
+  bilde: file
+}
+
+entity Song {
+  +id: int <<PK>>
+  ---
+  +name: str
+  +audiofile: file
+}
+
+entity Album {
+  +id: int <<PK>>
+  ---
+  +name: str
+  +imagefile: file
+  +date: date
+}
+
+entity Song_Artist {
+  +id: int <<PK>>
+  ---
+  +song: int <<FK>>
+  +artist: int <<FK>>
+}
+
+entity Album_Artist {
+  +id: int <<PK>>
+  ---
+  +album: int <<FK>>
+  +artist: int <<FK>>
+}
+
+entity Album_Song {
+  +id: int <<PK>>
+  ---
+  +album: int <<FK>>
+  +song: int <<FK>>
+  +position: int
+}
+
+Artist ||--o{  Song_Artist
+Song_Artist }o--|| Song
+Artist ||--o{ Album_Artist
+Album_Artist }o--|| Album
+Album ||--o{ Album_Song
+Album_Song }o--|| Song
+
+@enduml

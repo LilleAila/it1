@@ -16,5 +16,7 @@ with import <nixpkgs> {}; mkShell {
 
       ipdb
     ]))
+
+    plantuml
   ];
 }
