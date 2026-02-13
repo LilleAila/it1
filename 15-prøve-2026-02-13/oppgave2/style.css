@@ -1,0 +1,72 @@
+:root {
+  --base00: #282828;
+  --base01: #3c3836;
+  --base02: #504945;
+  --base03: #665c54;
+  --base04: #bdae93;
+  --base05: #d5c4a1;
+  --base06: #ebdbb2;
+  --base07: #fbf1c7;
+  --base08: #fb4934;
+  --base09: #fe8019;
+  --base0A: #fabd2f;
+  --base0B: #b8bb26;
+  --base0C: #8ec07c;
+  --base0D: #83a598;
+  --base0E: #d3869b;
+  --base0F: #d65d0e;
+}
+
+html,
+body {
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+body {
+  padding: 2rem;
+  background-color: var(--base00);
+  color: var(--base06);
+  font-family: sans-serif;
+  line-height: 1.5em;
+}
+
+#books {
+  list-style-type: none;
+  display: flex;
+  flex-direction: column;
+
+  padding: 1rem;
+  margin: 0;
+  gap: 1rem;
+  gap: 1rem;
+
+  li {
+    padding: 0.5rem;
+    border: 2px solid var(--base0E);
+    border-radius: 12px;
+    background-color: color-mix(in srgb, var(--base0E) 10%, var(--base00) 90%);
+
+    h2 {
+      margin-left: 1rem;
+    }
+  }
+}
+
+a {
+  color: var(--base06);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.back {
+  background-color: var(--base0D);
+  color: var(--base00);
+  padding: 0.5rem;
+  font-size: 16pt;
+  border-radius: 12px;
+}

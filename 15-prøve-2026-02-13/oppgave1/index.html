@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Oppgave 1 - Form</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="script.js" type="module" defer></script>
+  </head>
+  <body>
+    <main>
+      <form id="form">
+        <label>
+          <span>Fornavn</span>
+          <input
+            type="text"
+            name="firstname"
+            placeholder="Skriv inn fornavnet ditt"
+            required
+          />
+        </label>
+        <label>
+          <span>Etternavn</span>
+          <input
+            type="text"
+            name="lastname"
+            placeholder="Skriv inn etternavnet ditt"
+            required
+          />
+        </label>
+        <label>
+          <span>E-postaddresse</span>
+          <input
+            type="email"
+            name="email"
+            placeholder="Skriv inn e-postaddressen din"
+            required
+          />
+        </label>
+        <label>
+          <span>Passord</span>
+          <input
+            type="password"
+            name="password"
+            placeholder="Lag et passord"
+            required
+          />
+        </label>
+        <label class="span-2">
+          <span>Rabattkode</span>
+          <input
+            type="text"
+            name="code"
+            placeholder="Skriv inn en rabattkode"
+          />
+        </label>
+
+        <label class="submit span-2">
+          <button type="submit">Send inn</button>
+        </label>
+      </form>
+      <div id="result"></div>
+    </main>
+  </body>
+</html>
