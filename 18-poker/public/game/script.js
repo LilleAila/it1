@@ -1,7 +1,7 @@
 import { io } from "/socket.io-client/socket.io.esm.min.js";
 
 const gameId = window.location.pathname.split("/").pop();
-const socket = io("http://localhost:3000");
+const socket = io();
 
 document.querySelector("#game-id").textContent = `(${gameId})`;
 

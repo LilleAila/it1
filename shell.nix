@@ -1,6 +1,6 @@
 with import <nixpkgs> {}; mkShell {
   packages = [
-    live-server
+    cloudflared
 
     nodejs_22
     bun

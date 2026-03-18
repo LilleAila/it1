@@ -78,6 +78,7 @@ httpServer.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
 
+// Websockets / socket.io
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
   socket.on("joinGame", ({ gameId }) => {
