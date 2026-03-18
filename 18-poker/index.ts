@@ -22,43 +22,165 @@ app.use(
   express.static("node_modules/socket.io-client/dist"),
 );
 
+enum Suit {
+  Hearts = "Hearts",
+  Diamonds = "Diamonds",
+  Clubs = "Clubs",
+  Spades = "Spades",
+}
+const suits = Object.values(Suit);
+
+type Rank = 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | "J" | "Q" | "K" | "A";
+const ranks: Rank[] = [2, 3, 4, 5, 6, 7, 8, 9, 10, "J", "Q", "K", "A"];
+
+class Card {
+  constructor(
+    public readonly rank: Rank,
+    public readonly suit: Suit,
+  ) {}
+}
+
+class Player {
+  public hand: [Card, Card] | null;
+
+  constructor(
+    public readonly id: string,
+    public readonly username: string,
+    public stack: number,
+  ) {
+    this.hand = null;
+  }
+
+  setHand(a: Card, b: Card) {
+    this.hand = [a, b];
+  }
+}
+
 class Game {
-  id: string;
-  players: string[];
-  state: "waiting" | "active";
+  public readonly id: string;
+  public players: Player[];
+  public state: "waiting" | "active" = "waiting";
+  public communityCards: Card[];
+  public deck: Card[];
+  public pot: number = 0;
+  public dealer: number = 0;
+
+  public tableSize: number = 9;
 
   constructor(id: string) {
     this.id = id;
     this.players = [];
-    this.state = "waiting";
+    this.communityCards = [];
+    this.deck = [];
+    this.initDeck();
+  }
+
+  initDeck() {
+    let deck = [];
+    for (const suit of suits) {
+      for (const rank of ranks) {
+        deck.push(new Card(rank, suit));
+      }
+    }
+    this.deck = deck;
+  }
+
+  shuffleDeck() {
+    // Fisher-Yates Shuffle
+    for (let i = this.deck.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [this.deck[i], this.deck[j]] = [this.deck[j]!, this.deck[i]!];
+    }
   }
 
   hasPlayer(id: string): boolean {
-    return this.players.includes(id);
+    return this.players.some((p) => p.id == id);
   }
 
-  addPlayer(id: string) {
-    if (!this.hasPlayer(id)) {
-      this.players.push(id);
+  addPlayer(player: Player) {
+    if (!this.hasPlayer(player.id)) {
+      this.players.push(player);
     }
   }
 
   removePlayer(id: string) {
-    this.players = this.players.filter((p) => p !== id);
+    this.players = this.players.filter((p) => p.id !== id);
+  }
+
+  drawCard() {
+    if (this.deck.length < 1) throw new Error("No cards left in deck!");
+    return this.deck.pop()!;
+  }
+
+  dealCard() {
+    this.communityCards.push(this.drawCard());
+  }
+
+  dealHoleCards() {
+    if (this.players.length < 2) throw new Error("Needs at least 2 players!");
+    let hands = new Array(this.players.length).fill([]);
+    let firstIndex = (this.dealer + 1) % this.players.length;
+    for (let r = 0; r < 2; r++) {
+      for (let i = 0; i < this.players.length; i++) {
+        const index = (firstIndex + i) % this.players.length;
+        hands[index].push(this.drawCard());
+      }
+    }
+    for (let i = 0; i < hands.length; i++) {
+      const [a, b] = hands[i];
+      this.players[i]!.setHand(a, b);
+    }
   }
 }
 
-let games: Record<string, Game> = {};
+class PokerServer {
+  private games: Map<string, Game> = new Map();
+  private tickRate = 1000; // Tick every second
+  private interval: NodeJS.Timeout | null = null;
 
-app.post("/new-game", (req, res) => {
-  const gameId = crypto.randomUUID().slice(0, 6);
-  games[gameId] = new Game(gameId);
+  constructor() {}
+
+  start() {
+    if (this.interval) return;
+    this.interval = setInterval(() => this.update(), this.tickRate);
+    console.log("Game server loop started.");
+  }
+
+  stop() {
+    if (!this.interval) return;
+    clearInterval(this.interval);
+    this.interval = null;
+    console.log("Game server loop stopped.");
+  }
+
+  private update() {
+    for (const [gameId, game] of this.games) {
+    }
+  }
+
+  createGame(): string {
+    const gameId = crypto.randomUUID().slice(0, 6);
+    this.games.set(gameId, new Game(gameId));
+    console.log(`Created game ${gameId}`);
+    return gameId;
+  }
+
+  getGame(id: string): Game | undefined {
+    const game = this.games.get(id);
+    return game;
+  }
+}
+
+const pokerServer = new PokerServer();
+
+app.post("/new-game", (_req, res) => {
+  const gameId = pokerServer.createGame();
   res.redirect(`/game/${gameId}`);
 });
 
 app.post("/join-game", (req, res) => {
   const { gameId } = req.body;
-  if (games[gameId]) {
+  if (pokerServer.getGame(gameId)) {
     res.redirect(`/game/${gameId}`);
   } else {
     res.status(404).send(`Game ID not found.`);
@@ -67,44 +189,43 @@ app.post("/join-game", (req, res) => {
 
 app.get("/game/:id", (req, res) => {
   const { id } = req.params;
-  const game = games[id];
+  const game = pokerServer.getGame(id);
   if (!game) {
     return res.status(404).send("Game not found");
   }
   res.sendFile(__dirname + "/public/game/index.html");
 });
 
-httpServer.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-});
-
 // Websockets / socket.io
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
-  socket.on("joinGame", ({ gameId }) => {
-    const game = games[gameId];
+  socket.on("joinGame", ({ gameId, stack }) => {
+    const game = pokerServer.getGame(gameId);
     if (!game) return;
 
-    socket.gameId = gameId;
+    socket.data.gameId = gameId;
 
     if (!game.hasPlayer(socket.id)) {
-      game.addPlayer(socket.id);
+      game.addPlayer(new Player(socket.id, socket.id, stack));
       socket.join(gameId);
 
       io.to(gameId).emit("gameState", {
         message: "Player Joined",
         players: game.players,
         state: game.state,
+        game,
       });
       socket.emit("playerState", { message: "Joined Game", joined: true });
     }
+
+    // console.log(game);
   });
 
   socket.on("leaveGame", ({ gameId }) => {
-    const game = games[gameId];
+    const game = pokerServer.getGame(gameId);
     if (!game) return;
 
-    socket.gameId = gameId;
+    socket.data.gameId = gameId;
 
     if (game.hasPlayer(socket.id)) {
       game.removePlayer(socket.id);
@@ -114,16 +235,17 @@ io.on("connection", (socket) => {
         message: "Player Left",
         players: game.players,
         state: game.state,
+        game,
       });
       socket.emit("playerState", { message: "Left game", joined: false });
     }
   });
 
   socket.on("disconnect", () => {
-    const { gameId } = socket;
+    const { gameId } = socket.data;
 
     if (gameId) {
-      const game = games[gameId];
+      const game = pokerServer.getGame(gameId);
       if (!game) return;
 
       console.log(`User ${socket.id} disconnected from game ${gameId}`);
@@ -133,7 +255,17 @@ io.on("connection", (socket) => {
         message: "Player Left",
         players: game.players,
         state: game.state,
+        game,
       });
     }
   });
 });
+
+function init() {
+  httpServer.listen(PORT, () => {
+    console.log(`Server running at http://localhost:${PORT}`);
+  });
+  pokerServer.start();
+}
+
+init();

@@ -5,8 +5,11 @@ const socket = io();
 
 document.querySelector("#game-id").textContent = `(${gameId})`;
 
-document.querySelector("#join-game").addEventListener("click", (e) => {
-  socket.emit("joinGame", { gameId });
+document.querySelector("#join-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const form = new FormData(e.target);
+  const data = Object.fromEntries(form);
+  socket.emit("joinGame", { gameId, stack: Number(data.stack) });
 });
 
 document.querySelector("#leave-game").addEventListener("click", (e) => {
@@ -20,12 +23,12 @@ document.querySelector("#back-button").addEventListener("click", (e) => {
 
 socket.on("gameState", (gameState) => {
   const { message, players, state } = gameState;
-  console.log(message);
+  console.log(gameState);
   document.querySelector("#players").innerHTML = `
     ${players
       .map(
         (p) => `
-      <li>${p}</li>
+      <li>${p.username}</li>
     `,
       )
       .join("")}
