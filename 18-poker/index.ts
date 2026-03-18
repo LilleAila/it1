@@ -16,9 +16,10 @@ const io = new Server(httpServer, {
 app.use(cors());
 app.use(express.static("public"));
 
-app.use("/socket.io-client", express.static(
-  "node_modules/socket.io-client/dist"
-));
+app.use(
+  "/socket.io-client",
+  express.static("node_modules/socket.io-client/dist"),
+);
 
 class Game {
   id: string;
@@ -42,7 +43,7 @@ class Game {
   }
 
   removePlayer(id: string) {
-    this.players = this.players.filter(p => p !== id);
+    this.players = this.players.filter((p) => p !== id);
   }
 }
 
@@ -79,8 +80,12 @@ io.on("connection", (socket) => {
       game.addPlayer(socket.id);
       socket.join(gameId);
 
-      io.to(gameId).emit("gameState", { message: "Player Joined", players: game.players, state: game.state });
-      socket.emit("playerState", { message: "Joined Game", joined: true, })
+      io.to(gameId).emit("gameState", {
+        message: "Player Joined",
+        players: game.players,
+        state: game.state,
+      });
+      socket.emit("playerState", { message: "Joined Game", joined: true });
     }
   });
 
@@ -94,8 +99,12 @@ io.on("connection", (socket) => {
       game.removePlayer(socket.id);
       socket.leave(gameId);
 
-      io.to(gameId).emit("gameState", { message: "Player Left", players: game.players, state: game.state });
-      socket.emit("playerState", { message: "Left game", joined: false, })
+      io.to(gameId).emit("gameState", {
+        message: "Player Left",
+        players: game.players,
+        state: game.state,
+      });
+      socket.emit("playerState", { message: "Left game", joined: false });
     }
   });
 
@@ -117,4 +126,3 @@ io.on("connection", (socket) => {
     }
   });
 });
-

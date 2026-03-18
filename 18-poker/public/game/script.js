@@ -16,15 +16,19 @@ document.querySelector("#leave-game").addEventListener("click", (e) => {
 document.querySelector("#back-button").addEventListener("click", (e) => {
   socket.emit("leaveGame", { gameId });
   window.location.href = "/";
-})
+});
 
 socket.on("gameState", (gameState) => {
   const { message, players, state } = gameState;
   console.log(message);
   document.querySelector("#players").innerHTML = `
-    ${players.map((p) => `
+    ${players
+      .map(
+        (p) => `
       <li>${p}</li>
-    `).join("")}
+    `,
+      )
+      .join("")}
   `;
 });
 
