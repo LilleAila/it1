@@ -15,6 +15,7 @@ const io = new Server(httpServer, {
 
 app.use(cors());
 app.use(express.static("public"));
+app.use(express.urlencoded({ extended: true }));
 
 app.use(
   "/socket.io-client",
@@ -50,9 +51,18 @@ class Game {
 let games: Record<string, Game> = {};
 
 app.post("/new-game", (req, res) => {
-  const id = crypto.randomUUID().slice(0, 6);
-  games[id] = new Game(id);
-  res.redirect(`/game/${id}`);
+  const gameId = crypto.randomUUID().slice(0, 6);
+  games[gameId] = new Game(gameId);
+  res.redirect(`/game/${gameId}`);
+});
+
+app.post("/join-game", (req, res) => {
+  const { gameId } = req.body;
+  if (games[gameId]) {
+    res.redirect(`/game/${gameId}`);
+  } else {
+    res.status(404).send(`Game ID not found.`);
+  }
 });
 
 app.get("/game/:id", (req, res) => {
