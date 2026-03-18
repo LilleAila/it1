@@ -127,4 +127,16 @@ a.button {
       display: none;
     }
   }
+
+  &:not(.admin) {
+    .admin-container {
+      display: none;
+    }
+  }
+}
+
+.requested-seats {
+  &:not(.requests-available) {
+    display: none;
+  }
 }

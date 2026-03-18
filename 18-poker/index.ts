@@ -42,6 +42,7 @@ class Card {
 
 class Player {
   public hand: [Card, Card] | null;
+  public isAdmin: boolean = false;
 
   constructor(
     public readonly id: string,
@@ -64,6 +65,7 @@ class Game {
   public deck: Card[];
   public pot: number = 0;
   public dealer: number = 0;
+  public admin: string;
 
   public tableSize: number = 9;
 
@@ -72,7 +74,19 @@ class Game {
     this.players = [];
     this.communityCards = [];
     this.deck = [];
+    this.admin = "";
     this.initDeck();
+  }
+
+  getPublicState() {
+    return {
+      state: this.state,
+      communityCards: this.communityCards,
+      pot: this.pot,
+      dealer: this.dealer,
+      admin: this.admin,
+      players: this.players,
+    };
   }
 
   initDeck() {
@@ -101,10 +115,22 @@ class Game {
     if (!this.hasPlayer(player.id)) {
       this.players.push(player);
     }
+
+    if (this.players.length == 1) {
+      player.isAdmin = true;
+      this.admin = player.id;
+    }
   }
 
-  removePlayer(id: string) {
+  removePlayer(id: string): Player | undefined {
     this.players = this.players.filter((p) => p.id !== id);
+    if (this.players.every((p) => !p.isAdmin)) {
+      const player = this.players[0];
+      if (!player) return;
+      player.isAdmin = true;
+      this.admin = player.id;
+      return player;
+    }
   }
 
   drawCard() {
@@ -118,17 +144,17 @@ class Game {
 
   dealHoleCards() {
     if (this.players.length < 2) throw new Error("Needs at least 2 players!");
-    let hands = new Array(this.players.length).fill([]);
+    let hands: Card[][] = Array.from({ length: this.players.length }, () => []);
     let firstIndex = (this.dealer + 1) % this.players.length;
     for (let r = 0; r < 2; r++) {
       for (let i = 0; i < this.players.length; i++) {
         const index = (firstIndex + i) % this.players.length;
-        hands[index].push(this.drawCard());
+        hands[index]!.push(this.drawCard());
       }
     }
     for (let i = 0; i < hands.length; i++) {
-      const [a, b] = hands[i];
-      this.players[i]!.setHand(a, b);
+      const [a, b] = hands[i]!;
+      this.players[i]!.setHand(a!, b!);
     }
   }
 }
@@ -206,19 +232,21 @@ io.on("connection", (socket) => {
     socket.data.gameId = gameId;
 
     if (!game.hasPlayer(socket.id)) {
-      game.addPlayer(new Player(socket.id, socket.id, stack));
+      const player = new Player(socket.id, socket.id, stack);
+      game.addPlayer(player);
       socket.join(gameId);
 
       io.to(gameId).emit("gameState", {
         message: "Player Joined",
-        players: game.players,
-        state: game.state,
-        game,
+        state: game.getPublicState(),
       });
-      socket.emit("playerState", { message: "Joined Game", joined: true });
-    }
 
-    // console.log(game);
+      socket.emit("playerState", {
+        message: "Joined Game",
+        joined: true,
+        admin: player.isAdmin,
+      });
+    }
   });
 
   socket.on("leaveGame", ({ gameId }) => {
@@ -228,16 +256,27 @@ io.on("connection", (socket) => {
     socket.data.gameId = gameId;
 
     if (game.hasPlayer(socket.id)) {
-      game.removePlayer(socket.id);
+      const newAdmin = game.removePlayer(socket.id);
       socket.leave(gameId);
 
       io.to(gameId).emit("gameState", {
         message: "Player Left",
-        players: game.players,
-        state: game.state,
-        game,
+        state: game.getPublicState(),
       });
-      socket.emit("playerState", { message: "Left game", joined: false });
+
+      socket.emit("playerState", {
+        message: "Left game",
+        joined: false,
+        admin: false,
+      });
+
+      if (newAdmin) {
+        io.to(newAdmin.id).emit("playerState", {
+          message: "Assigned as admin",
+          joined: true,
+          admin: true,
+        });
+      }
     }
   });
 
@@ -249,14 +288,20 @@ io.on("connection", (socket) => {
       if (!game) return;
 
       console.log(`User ${socket.id} disconnected from game ${gameId}`);
-      game.removePlayer(socket.id);
+      const newAdmin = game.removePlayer(socket.id);
 
       io.to(gameId).emit("gameState", {
         message: "Player Left",
-        players: game.players,
-        state: game.state,
-        game,
+        state: game.getPublicState(),
       });
+
+      if (newAdmin) {
+        io.to(newAdmin.id).emit("playerState", {
+          message: "Assigned as admin",
+          joined: true,
+          admin: true,
+        });
+      }
     }
   });
 });

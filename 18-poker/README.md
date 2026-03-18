@@ -12,7 +12,7 @@ This is a simple poker game implemented using express with an sqlite database to
   - [ ] don't leave the game when exiting, but keep the player joined until they leave. maybe detect disconnection and set it to automatically check / fold until they rejoin, and completely skip the player for the next round.
 - [ ] allow spectating the game - make the `gameId` websocket independent of whether or not the player has joined, so it is possible to see the state of an unjoined game.
 - [ ] when creating a game, automatically join it
-- [ ] add an admin use to the game (the user who creates it)
+- [x] add an admin use to the game (the user who creates it)
   - [ ] show a form before joining
   - [ ] add an "awaiting approval" state for the owner to approve joining users
 - [ ] make the 404 pages prettier
