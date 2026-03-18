@@ -16,21 +16,9 @@ const io = new Server(httpServer, {
 app.use(cors());
 app.use(express.static("public"));
 
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-});
-
-io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
-  socket.on("joinGame", ({ gameId }) => {
-    socket.join(gameId);
-    io.to(gameId).emit("gameState", { message: "Player Joined", players: [ socket.id ], });
-  });
-
-  socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
-  });
-});
+app.use("/socket.io-client", express.static(
+  "node_modules/socket.io-client/dist"
+));
 
 class Game {
   id: string;
@@ -43,8 +31,14 @@ class Game {
     this.state = "waiting";
   }
 
+  hasPlayer(id: string): boolean {
+    return this.players.includes(id);
+  }
+
   addPlayer(id: string) {
-    this.players.push(id);
+    if (!this.hasPlayer(id)) {
+      this.players.push(id);
+    }
   }
 
   removePlayer(id: string) {
@@ -68,3 +62,59 @@ app.get("/game/:id", (req, res) => {
   }
   res.sendFile(__dirname + "/public/game/index.html");
 });
+
+httpServer.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}`);
+});
+
+io.on("connection", (socket) => {
+  console.log("User connected:", socket.id);
+  socket.on("joinGame", ({ gameId }) => {
+    const game = games[gameId];
+    if (!game) return;
+
+    socket.gameId = gameId;
+
+    if (!game.hasPlayer(socket.id)) {
+      game.addPlayer(socket.id);
+      socket.join(gameId);
+
+      io.to(gameId).emit("gameState", { message: "Player Joined", players: game.players, state: game.state });
+      socket.emit("playerState", { message: "Joined Game", joined: true, })
+    }
+  });
+
+  socket.on("leaveGame", ({ gameId }) => {
+    const game = games[gameId];
+    if (!game) return;
+
+    socket.gameId = gameId;
+
+    if (game.hasPlayer(socket.id)) {
+      game.removePlayer(socket.id);
+      socket.leave(gameId);
+
+      io.to(gameId).emit("gameState", { message: "Player Left", players: game.players, state: game.state });
+      socket.emit("playerState", { message: "Left game", joined: false, })
+    }
+  });
+
+  socket.on("disconnect", () => {
+    const { gameId } = socket;
+
+    if (gameId) {
+      const game = games[gameId];
+      if (!game) return;
+
+      console.log(`User ${socket.id} disconnected from game ${gameId}`);
+      game.removePlayer(socket.id);
+
+      io.to(gameId).emit("gameState", {
+        message: "Player Left",
+        players: game.players,
+        state: game.state,
+      });
+    }
+  });
+});
+

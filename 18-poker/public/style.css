@@ -48,7 +48,7 @@ footer {
   align-items: center;
 }
 
-button {
+button, a.button {
   outline: none;
   border: none;
   font-size: 1.4rem;
@@ -63,6 +63,7 @@ button {
   justify-content: center;
   transform: scale(1);
   width: 100%;
+  cursor: pointer;
 
   &:hover {
     transform: scale(1.1);
@@ -72,7 +73,6 @@ button {
     transform: scale(1.05);
   }
 }
-
 
 .game-buttons {
   display: flex;
@@ -97,7 +97,32 @@ button {
   }
 }
 
+.buttons-horizontal {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  width: 30rem;
+}
+
 #game-id {
   color: var(--base05);
   font-size: 1rem;
+}
+
+.game-container {
+  &.joined {
+    #join-game {
+      display: none;
+    }
+  }
+
+  &:not(.joined) {
+    #leave-game {
+      display: none;
+    }
+
+    .game {
+      display: none;
+    }
+  }
 }
