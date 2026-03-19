@@ -19,6 +19,10 @@ This is a simple poker game implemented using express with an sqlite database to
 - [ ] display the card SVGs (in gruvbox preferably) https://cardmeister.github.io/index.html
   - [ ] add a 4-color option
 
+## Attributions
+
+- Playing card SVGs (unlicense): https://github.com/cardmeister/cardmeister.github.io
+
 ## Run locally
 
 ```sh

@@ -22,6 +22,8 @@ app.use(
   express.static("node_modules/socket.io-client/dist"),
 );
 
+app.use("/cardmeister", express.static("node_modules/playingcardts"));
+
 enum Suit {
   Hearts = 0,
   Diamonds,

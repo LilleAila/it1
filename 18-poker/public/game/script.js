@@ -8,10 +8,10 @@ let joinRequests = [];
 document.querySelector("#game-id").textContent = `(${gameId})`;
 
 document.querySelector("#join-form").addEventListener("submit", (e) => {
-  e.preventDefault();
   const form = new FormData(e.target);
   const data = Object.fromEntries(form);
   socket.emit("joinGame", { gameId, stack: Number(data.stack) });
+  e.preventDefault();
 });
 
 document.querySelector("#leave-game").addEventListener("click", (_e) => {

@@ -161,3 +161,34 @@ input {
     gap: 0.5rem;
   }
 }
+
+.game {
+  .cards {
+    display: flex;
+    gap: 1rem;
+
+    &.hole-cards {
+      justify-content: center;
+    }
+
+    playing-card {
+      width: 7rem;
+      height: auto;
+
+      transition: transform 200ms ease;
+
+      &:not(.active) {
+        visibility: hidden;
+      }
+
+      &.best {
+        transform: rotate(2deg) scale(1.1);
+      }
+    }
+  }
+
+  .hand-info {
+    display: block;
+    text-align: center;
+  }
+}

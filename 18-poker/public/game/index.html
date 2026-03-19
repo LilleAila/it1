@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="/style.css" />
     <link rel="icon" href="favicon.png" />
 
+    <script src="/cardmeister/elements.cardmeister.min.js"></script>
     <script src="script.js" type="module" defer></script>
   </head>
   <body>
@@ -78,6 +79,43 @@
       <div class="game">
         <h2>Players:</h2>
         <ul id="players"></ul>
+
+        <h2>Community Cards</h2>
+        <div class="cards community-cards">
+          <playing-card
+            class="active best"
+            rank="3"
+            suit="Diamonds"
+          ></playing-card>
+          <playing-card
+            class="active best"
+            rank="Q"
+            suit="Hearts"
+          ></playing-card>
+          <playing-card class="active" rank="2" suit="Spades"></playing-card>
+          <playing-card
+            class="active best"
+            rank="6"
+            suit="Clubs"
+          ></playing-card>
+          <playing-card rank="A" suit="Hearts"></playing-card>
+        </div>
+
+        <h2>Hole Cards</h2>
+        <div class="cards hole-cards">
+          <playing-card
+            class="active best"
+            rank="7"
+            suit="Diamonds"
+          ></playing-card>
+          <playing-card
+            class="active best"
+            rank="A"
+            suit="Hearts"
+          ></playing-card>
+        </div>
+
+        <p class="hand-info">High Card (A)</p>
       </div>
     </main>
 
