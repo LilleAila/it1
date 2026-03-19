@@ -28,7 +28,7 @@ enum Suit {
   Clubs,
   Spades,
 }
-const suits = Object.values(Suit);
+const suits = Object.values(Suit).filter((x) => typeof x == "number");
 
 const ranks = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
 
