@@ -42,6 +42,8 @@
               type="number"
               name="tableSize"
               placeholder="Max Seats"
+              min="2"
+              max="100"
               required
             />
           </label>
@@ -51,6 +53,7 @@
               type="number"
               name="turnTime"
               placeholder="Turn Time"
+              min="0"
               required
             />
           </label>
@@ -60,6 +63,7 @@
               type="number"
               name="smallBlind"
               placeholder="Small Blind"
+              min="0"
               required
             />
           </label>
@@ -69,6 +73,7 @@
               type="number"
               name="bigBlind"
               placeholder="Big Blind"
+              min="0"
               required
             />
           </label>
@@ -116,6 +121,14 @@
         </div>
 
         <p class="hand-info">High Card (A)</p>
+
+        <h2>Actions</h2>
+        <div class="player-actions">
+          <button>Check</button>
+          <button>Call</button>
+          <button>Raise</button>
+          <button>Fold</button>
+        </div>
       </div>
     </main>
 
