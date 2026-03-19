@@ -32,6 +32,47 @@
           <h2>Pending requests</h2>
           <div id="requested-seats"></div>
         </div>
+
+        <form id="game-options">
+          <h2>Options</h2>
+          <label>
+            <span>Max Seats</span>
+            <input
+              type="number"
+              name="tableSize"
+              placeholder="Max Seats"
+              required
+            />
+          </label>
+          <label>
+            <span>Turn Time</span>
+            <input
+              type="number"
+              name="turnTime"
+              placeholder="Turn Time"
+              required
+            />
+          </label>
+          <label>
+            <span>Small Blind</span>
+            <input
+              type="number"
+              name="smallBlind"
+              placeholder="Small Blind"
+              required
+            />
+          </label>
+          <label>
+            <span>Big Blind</span>
+            <input
+              type="number"
+              name="bigBlind"
+              placeholder="Big Blind"
+              required
+            />
+          </label>
+          <button action="submit">Save</button>
+        </form>
       </div>
 
       <div class="game">

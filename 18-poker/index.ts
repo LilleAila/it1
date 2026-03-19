@@ -23,21 +23,139 @@ app.use(
 );
 
 enum Suit {
-  Hearts = "Hearts",
-  Diamonds = "Diamonds",
-  Clubs = "Clubs",
-  Spades = "Spades",
+  Hearts = 0,
+  Diamonds,
+  Clubs,
+  Spades,
 }
 const suits = Object.values(Suit);
 
-type Rank = 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | "J" | "Q" | "K" | "A";
-const ranks: Rank[] = [2, 3, 4, 5, 6, 7, 8, 9, 10, "J", "Q", "K", "A"];
+const ranks = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
+
+enum HandType {
+  HighCard = 0,
+  OnePair,
+  TwoPair,
+  ThreeOfAKind,
+  Straight,
+  Flush,
+  FullHouse,
+  FourOfAKind,
+  StraightFlush,
+}
 
 class Card {
   constructor(
-    public readonly rank: Rank,
+    public readonly rank: number,
     public readonly suit: Suit,
   ) {}
+}
+
+class EvaluatedHand {
+  public type: HandType;
+  public ranks: number[];
+  public cards: Card[];
+
+  constructor(cards: Card[]) {
+    const sortedRanks = cards.map((c) => c.rank).toSorted((a, b) => b - a);
+    this.cards = cards.toSorted((a, b) => b.rank - a.rank);
+
+    let rankCounts = new Array(16).fill(0);
+    let suitCounts = new Array(4).fill(0);
+
+    for (const c of this.cards) {
+      rankCounts[c.rank] += 1;
+      suitCounts[c.suit] += 1;
+    }
+
+    const fiveHighStraight =
+      JSON.stringify(sortedRanks) == JSON.stringify([14, 5, 4, 3, 2]);
+    const straight =
+      (ranks[0]! - ranks[4]! == 4 && new Set(sortedRanks).size == 5) ||
+      fiveHighStraight;
+    const flush = suitCounts.some((x) => x == 5);
+
+    let pairs = 0;
+    let threeOfAKind = false;
+    let fourOfAKind = false;
+
+    for (let i = 14; i >= 2; i--) {
+      const count = rankCounts[i];
+      if (count >= 4) fourOfAKind = true;
+      else if (count >= 3) threeOfAKind = true;
+      else pairs += Math.floor(count / 2);
+    }
+
+    this.type =
+      flush && straight
+        ? HandType.StraightFlush
+        : fourOfAKind
+          ? HandType.FourOfAKind
+          : threeOfAKind && pairs >= 1
+            ? HandType.FullHouse
+            : flush
+              ? HandType.Flush
+              : straight
+                ? HandType.Straight
+                : threeOfAKind
+                  ? HandType.ThreeOfAKind
+                  : pairs >= 2
+                    ? HandType.TwoPair
+                    : pairs >= 1
+                      ? HandType.OnePair
+                      : HandType.HighCard;
+
+    if (fiveHighStraight) {
+      this.ranks = [5, 4, 3, 2, 1];
+    } else {
+      this.ranks = sortedRanks.toSorted((a, b) => {
+        if (rankCounts[a] != rankCounts[b])
+          return rankCounts[b] - rankCounts[a];
+        return b - a;
+      });
+    }
+  }
+
+  compare(b: EvaluatedHand): number {
+    if (this.type != b.type) return this.type - b.type;
+    for (let i = 0; i < this.ranks.length; i++) {
+      if (this.ranks[i] != b.ranks[i]) return this.ranks[i]! - b.ranks[i]!;
+    }
+    return 0;
+  }
+}
+
+interface HandResult {
+  bestHand: EvaluatedHand;
+  indices: number[];
+}
+
+function bestHand(holeCards: Card[], communityCards: Card[]): HandResult {
+  const allCards = [...holeCards, ...communityCards];
+  const n = allCards.length;
+  let bestResult: HandResult | null = null;
+
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      for (let k = j + 1; k < n; k++) {
+        for (let l = k + 1; l < n; l++) {
+          for (let m = l + 1; m < n; m++) {
+            const indices = [i, j, k, l, m];
+            const cards = indices.map((x) => allCards[x]!);
+            const evaluated = new EvaluatedHand(cards);
+            if (!bestResult || evaluated.compare(bestResult.bestHand) > 0) {
+              bestResult = {
+                bestHand: evaluated,
+                indices,
+              };
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return bestResult!;
 }
 
 class Player {
@@ -57,6 +175,13 @@ class Player {
   }
 }
 
+interface GameOptions {
+  tableSize: number;
+  smallBlind: number;
+  bigBlind: number;
+  turnTime: number;
+}
+
 class Game {
   public readonly id: string;
   public players: Player[];
@@ -66,8 +191,7 @@ class Game {
   public pot: number = 0;
   public dealer: number = 0;
   public admin: string;
-
-  public tableSize: number = 9;
+  public options: GameOptions;
 
   constructor(id: string) {
     this.id = id;
@@ -75,6 +199,12 @@ class Game {
     this.communityCards = [];
     this.deck = [];
     this.admin = "";
+    this.options = {
+      tableSize: 9,
+      smallBlind: 0,
+      bigBlind: 0,
+      turnTime: 30,
+    };
     this.initDeck();
   }
 
@@ -86,7 +216,12 @@ class Game {
       dealer: this.dealer,
       admin: this.admin,
       players: this.players,
+      options: this.options,
     };
+  }
+
+  getOptions() {
+    return this.options;
   }
 
   initDeck() {
@@ -225,6 +360,22 @@ app.get("/game/:id", (req, res) => {
 // Websockets / socket.io
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
+
+  socket.on("updateOptions", ({ gameId, options }) => {
+    const game = pokerServer.getGame(gameId);
+    if (!game) return;
+
+    const username = socket.id;
+    if (username != game.admin) return;
+
+    game.options = options as GameOptions;
+
+    io.to(gameId).emit("gameOptions", {
+      message: "Options Changed",
+      options: game.getOptions(),
+    });
+  });
+
   socket.on("joinGame", ({ gameId, stack }) => {
     const game = pokerServer.getGame(gameId);
     if (!game) return;
@@ -245,6 +396,11 @@ io.on("connection", (socket) => {
         message: "Joined Game",
         joined: true,
         admin: player.isAdmin,
+      });
+
+      io.to(gameId).emit("gameOptions", {
+        message: "Options Changed",
+        options: game.getOptions(),
       });
     }
   });
@@ -314,3 +470,14 @@ function init() {
 }
 
 init();
+
+// const holeCards = [new Card(14, Suit.Hearts), new Card(14, Suit.Clubs)];
+// const communityCards = [
+//   new Card(8, Suit.Diamonds),
+//   new Card(14, Suit.Diamonds),
+//   new Card(7, Suit.Diamonds),
+//   new Card(12, Suit.Spades),
+//   new Card(7, Suit.Clubs),
+// ];
+// const best = bestHand(holeCards, communityCards);
+// console.log(best);

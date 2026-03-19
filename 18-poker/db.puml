@@ -1,0 +1,32 @@
+@startuml
+left to right direction
+skinparam linetype ortho
+hide circle
+
+entity user {
+  +id: int <<PK>>
+  --
+  +username: str
+}
+
+entity game {
+  +id: int <<PK>>
+  --
+  +rounds: int
+  +start_time: int
+  +end_time: int
+}
+
+entity user_game {
+  +user: int <<FK>> <<PK>>
+  +game: int <<FK>> <<PK>>
+  --
+  +buy_ins: int
+  +hands_won: int
+  +total_investment: int
+  +final_balance: int
+}
+
+user ||--o{ user_game
+user_game }o--|| game
+@enduml

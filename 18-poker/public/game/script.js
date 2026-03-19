@@ -56,6 +56,21 @@ socket.on("playerState", (playerState) => {
   }
 });
 
+socket.on("gameOptions", ({ message, options }) => {
+  console.log(message);
+
+  Object.entries(options).forEach(([key, value]) => {
+    document.querySelector(`#game-options input[name="${key}"]`).value = value;
+  });
+});
+
+document.querySelector("#game-options").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const form = new FormData(e.target);
+  const options = Object.fromEntries(form);
+  socket.emit("updateOptions", { gameId, options });
+});
+
 socket.on("joinRequest", (joinRequest) => {
   const { message, players } = joinRequest;
   console.log(message);

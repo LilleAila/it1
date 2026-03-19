@@ -76,6 +76,15 @@ a.button {
   }
 }
 
+input {
+  background-color: var(--base01);
+  font-size: 1.4rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  border: 2px solid var(--base03);
+  color: var(--base06);
+}
+
 .game-buttons {
   display: flex;
   flex-direction: column;
@@ -87,15 +96,6 @@ a.button {
     gap: 1rem;
     height: 3rem;
     width: 100%;
-
-    input {
-      background-color: var(--base01);
-      font-size: 1.4rem;
-      padding: 0.2rem 0.5rem;
-      border-radius: 12px;
-      border: 2px solid var(--base04);
-      color: var(--base06);
-    }
   }
 }
 
@@ -138,5 +138,26 @@ a.button {
 .requested-seats {
   &:not(.requests-available) {
     display: none;
+  }
+}
+
+#game-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  max-width: 50rem;
+  gap: 1rem;
+
+  h2 {
+    grid-column: span 2;
+  }
+
+  button[action="submit"] {
+    grid-column: span 2;
+  }
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
   }
 }
