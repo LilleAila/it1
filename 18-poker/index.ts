@@ -25,9 +25,9 @@ app.use(
 app.use("/cardmeister", express.static("node_modules/playingcardts"));
 
 enum Suit {
-  Hearts = 0,
+  Clubs = 0,
   Diamonds,
-  Clubs,
+  Hearts,
   Spades,
 }
 const suits = Object.values(Suit).filter((x) => typeof x == "number");
@@ -195,6 +195,8 @@ class Game {
   public admin: string;
   public options: GameOptions;
 
+  public requestedSeats: Record<string, Player>;
+
   constructor(id: string) {
     this.id = id;
     this.players = [];
@@ -207,6 +209,7 @@ class Game {
       bigBlind: 0,
       turnTime: 30,
     };
+    this.requestedSeats = {};
     this.initDeck();
   }
 
@@ -268,6 +271,25 @@ class Game {
       this.admin = player.id;
       return player;
     }
+  }
+
+  getPlayer(id: string): Player | undefined {
+    return this.players.filter((p) => p.id == id)[0];
+  }
+
+  requestJoin(player: Player): boolean {
+    if (player.id in this.requestedSeats) return false;
+    this.requestedSeats[player.id] = player;
+    return true;
+  }
+
+  approveJoin(playerId: string) {
+    this.addPlayer(this.requestedSeats[playerId]!);
+    delete this.requestedSeats[playerId];
+  }
+
+  declineJoin(playerId: string) {
+    delete this.requestedSeats[playerId];
   }
 
   drawCard() {
@@ -378,31 +400,75 @@ io.on("connection", (socket) => {
     });
   });
 
-  socket.on("joinGame", ({ gameId, stack }) => {
+  socket.on("joinRequest", ({ gameId, stack }) => {
     const game = pokerServer.getGame(gameId);
     if (!game) return;
 
+    socket.join(gameId);
     socket.data.gameId = gameId;
 
     if (!game.hasPlayer(socket.id)) {
       const player = new Player(socket.id, socket.id, stack);
-      game.addPlayer(player);
-      socket.join(gameId);
+      if (game.players.length < 1) {
+        game.addPlayer(player);
+
+        socket.emit("playerState", {
+          message: "Joined Game",
+          joined: true,
+          admin: true,
+          player,
+        });
+
+        socket.emit("gameOptions", {
+          message: "Options Changed",
+          options: game.getOptions(),
+        });
+
+        io.to(gameId).emit("gameState", {
+          message: "Player Joined",
+          state: game.getPublicState(),
+        });
+      } else {
+        if (game.requestJoin(player)) {
+          io.to(game.admin).emit("joinRequest", {
+            message: "Player requested a seat",
+            player,
+          });
+        }
+      }
+    }
+  });
+
+  socket.on("joinResponse", ({ gameId, playerId, approved }) => {
+    const game = pokerServer.getGame(gameId);
+    if (!game) return;
+
+    if (approved) {
+      game.approveJoin(playerId);
+
+      io.to(playerId).emit("playerState", {
+        message: "Joined Game",
+        joined: true,
+        admin: false,
+        player: game.getPlayer(playerId),
+      });
+
+      io.to(playerId).emit("gameOptions", {
+        message: "Options Changed",
+        options: game.getOptions(),
+      });
 
       io.to(gameId).emit("gameState", {
         message: "Player Joined",
         state: game.getPublicState(),
       });
+    } else {
+      game.declineJoin(playerId);
 
-      socket.emit("playerState", {
-        message: "Joined Game",
-        joined: true,
-        admin: player.isAdmin,
-      });
-
-      io.to(gameId).emit("gameOptions", {
-        message: "Options Changed",
-        options: game.getOptions(),
+      io.to(playerId).emit("playerState", {
+        message: "Seat Declined",
+        joined: false,
+        admin: false,
       });
     }
   });
@@ -426,6 +492,7 @@ io.on("connection", (socket) => {
         message: "Left game",
         joined: false,
         admin: false,
+        player: {},
       });
 
       if (newAdmin) {
@@ -433,6 +500,7 @@ io.on("connection", (socket) => {
           message: "Assigned as admin",
           joined: true,
           admin: true,
+          player: newAdmin,
         });
       }
     }
@@ -458,6 +526,7 @@ io.on("connection", (socket) => {
           message: "Assigned as admin",
           joined: true,
           admin: true,
+          player: game.getPlayer(socket.id),
         });
       }
     }

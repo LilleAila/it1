@@ -1,16 +1,39 @@
 import { io } from "/socket.io-client/socket.io.esm.min.js";
 
+const gameContainer = document.querySelector(".game-container");
+
 const gameId = window.location.pathname.split("/").pop();
 const socket = io();
 let joinedGame = false;
-let joinRequests = [];
+let joinRequests = {};
+let playerSelf = {};
+
+const ranks = [
+  "",
+  "A",
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "10",
+  "J",
+  "Q",
+  "K",
+  "A",
+];
+const suits = ["Clubs", "Diamonds", "Hearts", "Spades"];
 
 document.querySelector("#game-id").textContent = `(${gameId})`;
 
 document.querySelector("#join-form").addEventListener("submit", (e) => {
   const form = new FormData(e.target);
   const data = Object.fromEntries(form);
-  socket.emit("joinGame", { gameId, stack: Number(data.stack) });
+  socket.emit("joinRequest", { gameId, stack: Number(data.stack) });
   e.preventDefault();
 });
 
@@ -23,14 +46,17 @@ document.querySelector("#back-button").addEventListener("click", (_e) => {
   window.location.href = "/";
 });
 
-socket.on("gameState", (gameState) => {
-  const { message, state } = gameState;
+socket.on("gameState", ({ message, state }) => {
   console.log(message);
-  document.querySelector("#players").innerHTML = `
+
+  document.querySelector("#players tbody").innerHTML = `
     ${state.players
       .map(
         (p) => `
-      <li>${p.username}${p.isAdmin ? " (Admin)" : ""}</li>
+      <tr ${p.id == playerSelf.id ? `class="self"` : ""}>
+        <td>${p.username}${p.isAdmin ? " (Admin)" : ""}</td>
+        <td>${p.stack}</td>
+      </tr>
     `,
       )
       .join("")}
@@ -38,11 +64,11 @@ socket.on("gameState", (gameState) => {
 });
 
 socket.on("playerState", (playerState) => {
-  const { message, joined, admin } = playerState;
+  const { message, joined, admin, player } = playerState;
   console.log(message);
   joinedGame = joined;
+  playerSelf = player;
 
-  const gameContainer = document.querySelector(".game-container");
   if (joinedGame) {
     gameContainer.classList.add("joined");
   } else {
@@ -71,28 +97,71 @@ document.querySelector("#game-options").addEventListener("submit", (e) => {
   socket.emit("updateOptions", { gameId, options });
 });
 
-socket.on("joinRequest", (joinRequest) => {
-  const { message, players } = joinRequest;
+socket.on("joinRequest", ({ message, player }) => {
   console.log(message);
+  joinRequests[player.id] = player;
 
-  joinRequests = players;
-  const requestedSeats = document.querySelector("#requested-seats");
-  requestedSeats.innerHTML = "";
-  for (const p of players) {
-    const username = document.createElement("div");
-    username.textContent = p.username;
-    const approve = document.createElement("button");
-    approve.textContent = "Approve";
-    approve.addEventListener("click", () => {
-      console.log(`Approving ${p.username}`);
+  const requestedSeatsWrapper = document.querySelector(".requested-seats");
+  const requestedSeats = document.querySelector("#requested-seats tbody");
+  requestedSeatsWrapper.classList.add("active-requests");
+  const tr = document.createElement("tr");
+
+  const username = document.createElement("td");
+  username.textContent = player.username;
+  tr.appendChild(username);
+
+  const stack = document.createElement("td");
+  stack.textContent = player.stack;
+  tr.appendChild(stack);
+
+  const approveContainer = document.createElement("td");
+  const approve = document.createElement("button");
+  approve.textContent = "Approve";
+  approve.addEventListener("click", () => {
+    console.log(`Approving ${player.username}`);
+
+    socket.emit("joinResponse", {
+      gameId,
+      playerId: player.id,
+      approved: true,
     });
-    const decline = document.createElement("button");
-    decline.textContent = "Decline";
-    decline.addEventListener("click", () => {
-      console.log(`Declining ${p.username}`);
+
+    tr.remove();
+
+    delete joinRequests[player.id];
+    if (Object.keys(joinRequests).length < 1) {
+      requestedSeatsWrapper.classList.remove("active-requests");
+    }
+  });
+  approveContainer.appendChild(approve);
+  tr.appendChild(approveContainer);
+
+  const declineContainer = document.createElement("td");
+  const decline = document.createElement("button");
+  decline.textContent = "Decline";
+  decline.addEventListener("click", () => {
+    console.log(`Declining ${player.username}`);
+
+    socket.emit("joinResponse", {
+      gameId,
+      playerId: player.id,
+      approved: false,
     });
-    requestedSeats.appendChild(username);
-    requestedSeats.appendChild(approve);
-    requestedSeats.appendChild(decline);
-  }
+
+    tr.remove();
+
+    delete joinRequests[player.id];
+    if (Object.keys(joinRequests).length < 1) {
+      requestedSeatsWrapper.classList.remove("active-requests");
+    }
+  });
+  declineContainer.appendChild(decline);
+  tr.appendChild(declineContainer);
+
+  requestedSeats.appendChild(tr);
+});
+
+socket.on("disconnect", (reason) => {
+  console.log("Disconnected. Reason: ", reason);
+  gameContainer.classList.remove("joined");
 });

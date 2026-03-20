@@ -1,6 +1,7 @@
 with import <nixpkgs> {}; mkShell {
   packages = [
     cloudflared
+    cloc
 
     nodejs_22
     bun

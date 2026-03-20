@@ -136,7 +136,7 @@ input {
 }
 
 .requested-seats {
-  &:not(.requests-available) {
+  &:not(.active-requests) {
     display: none;
   }
 }
@@ -201,5 +201,30 @@ input {
   .player-actions {
     display: flex;
     gap: 1rem;
+  }
+}
+
+#players {
+  width: 100%;
+  border-collapse: collapse;
+
+  tr {
+    border-left: 6px solid transparent;
+    &.self {
+      border-color: var(--base0B);
+    }
+
+    td,
+    th {
+      padding: 1rem;
+    }
+
+    td {
+      &:nth-child(2) {
+        font-size: 1.3rem;
+        font-weight: bold;
+        color: var(--base09);
+      }
+    }
   }
 }

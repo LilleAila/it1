@@ -27,15 +27,23 @@
       <br />
 
       <div class="admin-container">
-        <button>Start Round</button>
-
         <div class="requested-seats">
           <h2>Pending requests</h2>
-          <div id="requested-seats"></div>
+          <table id="requested-seats">
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>Stack</th>
+                <th>Approve</th>
+                <th>Decline</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
         </div>
 
         <form id="game-options">
-          <h2>Options</h2>
+          <h2>Game Options</h2>
           <label>
             <span>Max Seats</span>
             <input
@@ -43,7 +51,7 @@
               name="tableSize"
               placeholder="Max Seats"
               min="2"
-              max="100"
+              max="22"
               required
             />
           </label>
@@ -79,11 +87,21 @@
           </label>
           <button action="submit">Save</button>
         </form>
+
+        <br />
+
+        <button>Start Round</button>
       </div>
 
       <div class="game">
         <h2>Players:</h2>
-        <ul id="players"></ul>
+        <table id="players">
+          <thead>
+            <th>Username</th>
+            <th>Stack</th>
+          </thead>
+          <tbody></tbody>
+        </table>
 
         <h2>Community Cards</h2>
         <div class="cards community-cards">
@@ -91,19 +109,27 @@
             class="active best"
             rank="3"
             suit="Diamonds"
+            id="card2"
           ></playing-card>
           <playing-card
             class="active best"
             rank="Q"
             suit="Hearts"
+            id="card3"
           ></playing-card>
-          <playing-card class="active" rank="2" suit="Spades"></playing-card>
+          <playing-card
+            class="active"
+            rank="2"
+            suit="Spades"
+            id="card4"
+          ></playing-card>
           <playing-card
             class="active best"
             rank="6"
             suit="Clubs"
+            id="card5"
           ></playing-card>
-          <playing-card rank="A" suit="Hearts"></playing-card>
+          <playing-card rank="A" suit="Hearts" id="card6"></playing-card>
         </div>
 
         <h2>Hole Cards</h2>
@@ -112,11 +138,13 @@
             class="active best"
             rank="7"
             suit="Diamonds"
+            id="card0"
           ></playing-card>
           <playing-card
             class="active best"
             rank="A"
             suit="Hearts"
+            id="card1"
           ></playing-card>
         </div>
 
