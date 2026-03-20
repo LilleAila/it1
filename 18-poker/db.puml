@@ -7,6 +7,7 @@ entity user {
   +id: int <<PK>>
   --
   +username: str
+  +password_hash: str
 }
 
 entity game {
@@ -27,6 +28,32 @@ entity user_game {
   +final_balance: int
 }
 
+entity round {
+  +id: int <<PK>>
+  --
+  +timesstamp: int
+  +game: int <<FK>>
+  +community_cards: str
+  +winner: int <<FK>>
+  +pot: int
+  +hand_type: str
+}
+
+entity round_hand {
+  +id: int <<PK>>
+  --
+  +round: int <<FK>>
+  +user: int <<FK>>
+  +cards: str
+  +hand_type: str
+  +final_action: str
+  +contributed: int
+}
+
 user ||--o{ user_game
 user_game }o--|| game
+round }o--|| game
+round_hand }o--|| round
+round_hand }o--|| user
+round }o--|| user
 @enduml
