@@ -34,9 +34,13 @@ entity round {
   +timesstamp: int
   +game: int <<FK>>
   +community_cards: str
-  +winner: int <<FK>>
   +pot: int
   +hand_type: str
+}
+
+entity round_winner {
+  +round: int <<FK>> <<PK>>
+  +user: int <<FK>> <<PK>>
 }
 
 entity round_hand {
@@ -55,5 +59,6 @@ user_game }o--|| game
 round }o--|| game
 round_hand }o--|| round
 round_hand }o--|| user
-round }o--|| user
+round ||--o{ round_winner
+round_winner }o--|| user
 @enduml
