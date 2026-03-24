@@ -57,6 +57,7 @@ class EvaluatedHand {
   public type: HandType;
   public ranks: number[];
   public cards: Card[];
+  public info: number[];
 
   constructor(cards: Card[]) {
     const sortedRanks = cards.map((c) => c.rank).toSorted((a, b) => b - a);
@@ -89,24 +90,35 @@ class EvaluatedHand {
       else pairs += Math.floor(count / 2);
     }
 
-    this.type =
-      flush && straight
-        ? HandType.StraightFlush
-        : fourOfAKind
-          ? HandType.FourOfAKind
-          : threeOfAKind && pairs >= 1
-            ? HandType.FullHouse
-            : flush
-              ? HandType.Flush
-              : straight
-                ? HandType.Straight
-                : threeOfAKind
-                  ? HandType.ThreeOfAKind
-                  : pairs >= 2
-                    ? HandType.TwoPair
-                    : pairs >= 1
-                      ? HandType.OnePair
-                      : HandType.HighCard;
+    if (flush && straight) {
+      this.type = HandType.StraightFlush;
+      this.info = [sortedRanks[0]!];
+    } else if (fourOfAKind) {
+      this.type = HandType.FourOfAKind;
+      this.info = [sortedRanks[1]!];
+    } else if (threeOfAKind && pairs >= 1) {
+      this.type = HandType.FullHouse;
+      this.info = [sortedRanks[0]!, sortedRanks[4]!];
+    } else if (flush) {
+      this.type = HandType.Flush;
+      this.info = [];
+    } else if (straight) {
+      this.type = HandType.Straight;
+      this.info = [sortedRanks[0]!];
+    } else if (threeOfAKind) {
+      this.type = HandType.ThreeOfAKind;
+      this.info = [sortedRanks[2]!];
+    } else if (pairs >= 2) {
+      this.type = HandType.TwoPair;
+      this.info = [sortedRanks[1]!, sortedRanks[3]!];
+    } else if (pairs >= 1) {
+      this.type = HandType.OnePair;
+      const [i, _] = rankCounts.entries().find(([_, v]) => v >= 2)!;
+      this.info = [i];
+    } else {
+      this.type = HandType.HighCard;
+      this.info = [sortedRanks[0]!];
+    }
 
     if (fiveHighStraight) {
       this.ranks = [5, 4, 3, 2, 1];
@@ -627,15 +639,25 @@ function init() {
   });
   pokerServer.start();
 }
-
 init();
 
-// const holeCards = [new Card(6, Suit.Spades), new Card(8, Suit.Clubs)];
+// A not included
+// const holeCards = [new Card(2, Suit.Clubs), new Card(14, Suit.Clubs)];
 // const communityCards = [
+//   new Card(9, Suit.Clubs),
+//   new Card(3, Suit.Clubs),
+//   new Card(8, Suit.Clubs),
+//   new Card(11, Suit.Clubs),
+//   new Card(3, Suit.Diamonds),
+// ];
+// A, 2, 3, 4, K Straight?
+// const holeCards = [new Card(8, Suit.Hearts), new Card(3, Suit.Clubs)];
+// const communityCards = [
+//   new Card(4, Suit.Clubs),
 //   new Card(14, Suit.Clubs),
-//   new Card(6, Suit.Diamonds),
-//   new Card(5, Suit.Clubs),
-//   new Card(8, Suit.Diamonds),
+//   new Card(2, Suit.Diamonds),
+//   new Card(9, Suit.Spades),
+//   new Card(13, Suit.Hearts),
 // ];
 // const best = bestHand(holeCards, communityCards);
 // console.log(best);

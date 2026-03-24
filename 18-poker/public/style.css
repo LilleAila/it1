@@ -197,6 +197,10 @@ input {
   #hand-info {
     display: block;
     text-align: center;
+
+    &.hide {
+      visibility: hidden;
+    }
   }
 
   .player-actions {

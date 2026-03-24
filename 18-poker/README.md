@@ -4,6 +4,13 @@ This is a simple poker game implemented using express with an sqlite database to
 
 ![data model](./db.png)
 
+## TODO 2
+
+ok jeg likte ikke den andre todo listen jeg lager en ny en lol
+
+- Vise feedback om at man har sendt en join request
+- Gjøre / mer ulik fra /game slik at man kan se forskjell (rn blir man lett forvirret hva som er hvilken side)
+
 ## TODO
 
 - [ ] implement users

@@ -1,6 +1,7 @@
 import { io } from "/socket.io-client/socket.io.esm.min.js";
 
 const gameContainer = document.querySelector(".game-container");
+const handInfo = document.querySelector("#hand-info");
 
 const gameId = window.location.pathname.split("/").pop();
 const socket = io();
@@ -11,7 +12,6 @@ let playerSelf = {};
 const ranks = [
   "",
   "A",
-  "1",
   "2",
   "3",
   "4",
@@ -182,7 +182,8 @@ document.querySelector("#advance").addEventListener("click", () => {
 });
 
 socket.on("newHand", ({ message, hand }) => {
-  console.log(message);
+  console.log(message, hand);
+  handInfo.classList.add("hide");
 
   for (let i = 0; i < 7; i++) {
     const cardElement = document.querySelector(`#card${i}`);
@@ -217,7 +218,10 @@ socket.on("communityCards", ({ message, cards }) => {
 });
 
 socket.on("evaluatedHand", ({ message, result }) => {
-  console.log(message);
+  console.log(message, result);
+
+  handInfo.classList.remove("hide");
+
   for (let i = 0; i < 7; i++) {
     const cardElement = document.querySelector(`#card${i}`);
     if (result.indices.includes(i)) {
@@ -226,6 +230,10 @@ socket.on("evaluatedHand", ({ message, result }) => {
       cardElement.classList.remove("best");
     }
   }
+  const infoText =
+    result.bestHand.info.length > 0
+      ? ` (${result.bestHand.info.map((x) => ranks[x]).join(", ")})`
+      : "";
   document.querySelector("#hand-info").textContent =
-    handTypes[result.bestHand.type];
+    handTypes[result.bestHand.type] + infoText;
 });
