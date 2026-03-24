@@ -180,7 +180,8 @@ input {
         opacity 200ms ease;
 
       &:not(.active) {
-        visibility: hidden;
+        opacity: 0 !important;
+        transform: rotate(-5deg) scale(0.8) !important;
       }
 
       &.best {
@@ -193,7 +194,7 @@ input {
     }
   }
 
-  .hand-info {
+  #hand-info {
     display: block;
     text-align: center;
   }

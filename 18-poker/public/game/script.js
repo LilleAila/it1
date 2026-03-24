@@ -27,6 +27,17 @@ const ranks = [
   "A",
 ];
 const suits = ["Clubs", "Diamonds", "Hearts", "Spades"];
+const handTypes = [
+  "High Card",
+  "One Pair",
+  "Two Pair",
+  "Three of a Kind",
+  "Straight",
+  "Flush",
+  "Full House",
+  "Four of a Kind",
+  "Straight Flush",
+];
 
 document.querySelector("#game-id").textContent = `(${gameId})`;
 
@@ -164,4 +175,57 @@ socket.on("joinRequest", ({ message, player }) => {
 socket.on("disconnect", (reason) => {
   console.log("Disconnected. Reason: ", reason);
   gameContainer.classList.remove("joined");
+});
+
+document.querySelector("#advance").addEventListener("click", () => {
+  socket.emit("advanceGame", { gameId });
+});
+
+socket.on("newHand", ({ message, hand }) => {
+  console.log(message);
+
+  for (let i = 0; i < 7; i++) {
+    const cardElement = document.querySelector(`#card${i}`);
+    cardElement.classList.remove("best");
+    cardElement.classList.remove("active");
+  }
+
+  for (let i = 0; i < 2; i++) {
+    const cardElement = document.querySelector(`#card${i}`);
+    const card = hand[i];
+    cardElement.classList.add("best");
+    cardElement.classList.add("active");
+    cardElement.rank = ranks[card.rank];
+    cardElement.suit = suits[card.suit];
+  }
+});
+
+socket.on("communityCards", ({ message, cards }) => {
+  console.log(message);
+
+  for (let i = 0; i < 5; i++) {
+    const cardElement = document.querySelector(`#card${i + 2}`);
+    const card = cards[i];
+    if (!card) {
+      cardElement.classList.remove("active");
+      continue;
+    }
+    cardElement.classList.add("active");
+    cardElement.rank = ranks[card.rank];
+    cardElement.suit = suits[card.suit];
+  }
+});
+
+socket.on("evaluatedHand", ({ message, result }) => {
+  console.log(message);
+  for (let i = 0; i < 7; i++) {
+    const cardElement = document.querySelector(`#card${i}`);
+    if (result.indices.includes(i)) {
+      cardElement.classList.add("best");
+    } else {
+      cardElement.classList.remove("best");
+    }
+  }
+  document.querySelector("#hand-info").textContent =
+    handTypes[result.bestHand.type];
 });

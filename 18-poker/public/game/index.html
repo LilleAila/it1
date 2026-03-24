@@ -90,7 +90,7 @@
 
         <br />
 
-        <button>Start Round</button>
+        <button id="advance">Advance Game</button>
       </div>
 
       <div class="game">
@@ -105,50 +105,20 @@
 
         <h2>Community Cards</h2>
         <div class="cards community-cards">
-          <playing-card
-            class="active best"
-            rank="3"
-            suit="Diamonds"
-            id="card2"
-          ></playing-card>
-          <playing-card
-            class="active best"
-            rank="Q"
-            suit="Hearts"
-            id="card3"
-          ></playing-card>
-          <playing-card
-            class="active"
-            rank="2"
-            suit="Spades"
-            id="card4"
-          ></playing-card>
-          <playing-card
-            class="active best"
-            rank="6"
-            suit="Clubs"
-            id="card5"
-          ></playing-card>
-          <playing-card rank="A" suit="Hearts" id="card6"></playing-card>
+          <playing-card rank="A" suit="Spades" id="card2"></playing-card>
+          <playing-card rank="A" suit="Spades" id="card3"></playing-card>
+          <playing-card rank="A" suit="Spades" id="card4"></playing-card>
+          <playing-card rank="A" suit="Spades" id="card5"></playing-card>
+          <playing-card rank="A" suit="Spades" id="card6"></playing-card>
         </div>
 
         <h2>Hole Cards</h2>
         <div class="cards hole-cards">
-          <playing-card
-            class="active best"
-            rank="7"
-            suit="Diamonds"
-            id="card0"
-          ></playing-card>
-          <playing-card
-            class="active best"
-            rank="A"
-            suit="Hearts"
-            id="card1"
-          ></playing-card>
+          <playing-card rank="A" suit="Spades" id="card0"></playing-card>
+          <playing-card rank="A" suit="Spades" id="card1"></playing-card>
         </div>
 
-        <p class="hand-info">High Card (A)</p>
+        <p id="hand-info"></p>
 
         <h2>Actions</h2>
         <div class="player-actions">

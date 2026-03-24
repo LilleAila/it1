@@ -70,10 +70,11 @@ class EvaluatedHand {
       suitCounts[c.suit] += 1;
     }
 
+    const uniqueRanks = [...new Set(sortedRanks)];
     const fiveHighStraight =
       JSON.stringify(sortedRanks) == JSON.stringify([14, 5, 4, 3, 2]);
     const straight =
-      (ranks[0]! - ranks[4]! == 4 && new Set(sortedRanks).size == 5) ||
+      (uniqueRanks.length == 5 && uniqueRanks[0]! - uniqueRanks[4]! == 4) ||
       fiveHighStraight;
     const flush = suitCounts.some((x) => x == 5);
 
@@ -184,6 +185,14 @@ interface GameOptions {
   turnTime: number;
 }
 
+enum GameStage {
+  PreFlop = 0,
+  Flop,
+  Turn,
+  River,
+  Showdown,
+}
+
 class Game {
   public readonly id: string;
   public players: Player[];
@@ -194,6 +203,7 @@ class Game {
   public dealer: number = 0;
   public admin: string;
   public options: GameOptions;
+  public stage: GameStage = GameStage.PreFlop;
 
   public requestedSeats: Record<string, Player>;
 
@@ -247,6 +257,10 @@ class Game {
     }
   }
 
+  nPlayers(): number {
+    return this.players.length;
+  }
+
   hasPlayer(id: string): boolean {
     return this.players.some((p) => p.id == id);
   }
@@ -256,14 +270,14 @@ class Game {
       this.players.push(player);
     }
 
-    if (this.players.length == 1) {
+    if (this.nPlayers() == 1) {
       player.isAdmin = true;
       this.admin = player.id;
     }
   }
 
   removePlayer(id: string): Player | undefined {
-    this.players = this.players.filter((p) => p.id !== id);
+    this.players = this.players.filter((p) => p.id != id);
     if (this.players.every((p) => !p.isAdmin)) {
       const player = this.players[0];
       if (!player) return;
@@ -302,18 +316,81 @@ class Game {
   }
 
   dealHoleCards() {
-    if (this.players.length < 2) throw new Error("Needs at least 2 players!");
-    let hands: Card[][] = Array.from({ length: this.players.length }, () => []);
-    let firstIndex = (this.dealer + 1) % this.players.length;
+    const nPlayers = this.nPlayers();
+    if (nPlayers < 2) throw new Error("Needs at least 2 players!");
+    let hands: Card[][] = Array.from({ length: nPlayers }, () => []);
+    let firstIndex = (this.dealer + 1) % nPlayers;
     for (let r = 0; r < 2; r++) {
-      for (let i = 0; i < this.players.length; i++) {
-        const index = (firstIndex + i) % this.players.length;
+      for (let i = 0; i < nPlayers; i++) {
+        const index = (firstIndex + i) % nPlayers;
         hands[index]!.push(this.drawCard());
       }
     }
     for (let i = 0; i < hands.length; i++) {
       const [a, b] = hands[i]!;
       this.players[i]!.setHand(a!, b!);
+    }
+  }
+
+  evaluateHands() {
+    for (const p of this.players) {
+      const h = bestHand(p.hand!, this.communityCards);
+      io.to(p.id).emit("evaluatedHand", {
+        message: "Evaluated Hand",
+        result: h,
+      });
+    }
+  }
+
+  advance() {
+    switch (this.stage) {
+      case GameStage.PreFlop:
+        this.communityCards = [];
+        this.initDeck();
+        this.shuffleDeck();
+        this.dealHoleCards();
+        for (const p of this.players) {
+          io.to(p.id).emit("newHand", { message: "Dealt Hand", hand: p.hand });
+        }
+        io.to(this.id).emit("communityCards", {
+          message: "New Round",
+          cards: this.communityCards,
+        });
+        // blinds, betting round
+        this.stage = GameStage.Flop;
+        break;
+      case GameStage.Flop:
+        this.dealCard();
+        this.dealCard();
+        this.dealCard();
+        io.to(this.id).emit("communityCards", {
+          message: "Dealt Flop",
+          cards: this.communityCards,
+        });
+        this.evaluateHands();
+        // betting round
+        this.stage = GameStage.Turn;
+        break;
+      case GameStage.Turn:
+        this.dealCard();
+        io.to(this.id).emit("communityCards", {
+          message: "Dealt Turn",
+          cards: this.communityCards,
+        });
+        this.evaluateHands();
+        // betting round
+        this.stage = GameStage.River;
+        break;
+      case GameStage.River:
+        this.dealCard();
+        io.to(this.id).emit("communityCards", {
+          message: "Dealt River",
+          cards: this.communityCards,
+        });
+        this.evaluateHands();
+        // final betting round, finish round etc
+        this.stage = GameStage.PreFlop;
+        break;
     }
   }
 }
@@ -340,6 +417,7 @@ class PokerServer {
 
   private update() {
     for (const [gameId, game] of this.games) {
+      // console.log(`Updating poker game ${gameId}`);
     }
   }
 
@@ -385,6 +463,16 @@ app.get("/game/:id", (req, res) => {
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
+  socket.on("advanceGame", ({ gameId }) => {
+    const game = pokerServer.getGame(gameId);
+    if (!game) return;
+
+    const username = socket.id;
+    if (username != game.admin) return;
+
+    game.advance();
+  });
+
   socket.on("updateOptions", ({ gameId, options }) => {
     const game = pokerServer.getGame(gameId);
     if (!game) return;
@@ -409,7 +497,7 @@ io.on("connection", (socket) => {
 
     if (!game.hasPlayer(socket.id)) {
       const player = new Player(socket.id, socket.id, stack);
-      if (game.players.length < 1) {
+      if (game.nPlayers() < 1) {
         game.addPlayer(player);
 
         socket.emit("playerState", {
@@ -542,13 +630,12 @@ function init() {
 
 init();
 
-// const holeCards = [new Card(14, Suit.Hearts), new Card(14, Suit.Clubs)];
+// const holeCards = [new Card(6, Suit.Spades), new Card(8, Suit.Clubs)];
 // const communityCards = [
+//   new Card(14, Suit.Clubs),
+//   new Card(6, Suit.Diamonds),
+//   new Card(5, Suit.Clubs),
 //   new Card(8, Suit.Diamonds),
-//   new Card(14, Suit.Diamonds),
-//   new Card(7, Suit.Diamonds),
-//   new Card(12, Suit.Spades),
-//   new Card(7, Suit.Clubs),
 // ];
 // const best = bestHand(holeCards, communityCards);
 // console.log(best);
