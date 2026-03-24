@@ -230,10 +230,14 @@ socket.on("evaluatedHand", ({ message, result }) => {
       cardElement.classList.remove("best");
     }
   }
-  const infoText =
-    result.bestHand.info.length > 0
-      ? ` (${result.bestHand.info.map((x) => ranks[x]).join(", ")})`
-      : "";
-  document.querySelector("#hand-info").textContent =
-    handTypes[result.bestHand.type] + infoText;
+
+  if (result.bestHand.type == 8 && result.bestHand.info[0] == 14) {
+    handInfo.textContent = "Royal Flush";
+  } else {
+    const infoText =
+      result.bestHand.info.length > 0
+        ? ` (${result.bestHand.info.map((x) => ranks[x]).join(", ")})`
+        : "";
+    handInfo.textContent = handTypes[result.bestHand.type] + infoText;
+  }
 });
