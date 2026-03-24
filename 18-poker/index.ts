@@ -44,6 +44,7 @@ enum HandType {
   FullHouse,
   FourOfAKind,
   StraightFlush,
+  RoyalFlush,
 }
 
 class Card {
@@ -91,8 +92,13 @@ class EvaluatedHand {
     }
 
     if (flush && straight) {
-      this.type = HandType.StraightFlush;
-      this.info = [sortedRanks[0]!];
+      if (sortedRanks[0] == 14) {
+        this.type = HandType.RoyalFlush;
+        this.info = [];
+      } else {
+        this.type = HandType.StraightFlush;
+        this.info = [sortedRanks[0]!];
+      }
     } else if (fourOfAKind) {
       this.type = HandType.FourOfAKind;
       this.info = [sortedRanks[1]!];

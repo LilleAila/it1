@@ -37,6 +37,7 @@ const handTypes = [
   "Full House",
   "Four of a Kind",
   "Straight Flush",
+  "Royal Flush",
 ];
 
 document.querySelector("#game-id").textContent = `(${gameId})`;
@@ -231,13 +232,9 @@ socket.on("evaluatedHand", ({ message, result }) => {
     }
   }
 
-  if (result.bestHand.type == 8 && result.bestHand.info[0] == 14) {
-    handInfo.textContent = "Royal Flush";
-  } else {
-    const infoText =
-      result.bestHand.info.length > 0
-        ? ` (${result.bestHand.info.map((x) => ranks[x]).join(", ")})`
-        : "";
-    handInfo.textContent = handTypes[result.bestHand.type] + infoText;
-  }
+  const infoText =
+    result.bestHand.info.length > 0
+      ? ` (${result.bestHand.info.map((x) => ranks[x]).join(", ")})`
+      : "";
+  handInfo.textContent = handTypes[result.bestHand.type] + infoText;
 });
