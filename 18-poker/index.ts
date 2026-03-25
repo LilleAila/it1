@@ -92,6 +92,10 @@ class EvaluatedHand {
     }
 
     const fullHouse = threeOfAKind && pairs >= 1;
+    const [triple] = rankCounts.entries().find(([_, v]) => v == 3) ?? [
+      undefined,
+    ];
+    const [pair] = rankCounts.entries().find(([_, v]) => v == 2) ?? [undefined];
 
     if (flush && straight) {
       if (sortedRanks[0] == 14) {
@@ -110,7 +114,7 @@ class EvaluatedHand {
       this.info = [sortedRanks[1]!];
     } else if (fullHouse) {
       this.type = HandType.FullHouse;
-      this.info = [sortedRanks[0]!, sortedRanks[4]!];
+      this.info = [triple!, pair!];
     } else if (flush) {
       this.type = HandType.Flush;
       this.info = [];
@@ -135,9 +139,7 @@ class EvaluatedHand {
     if (fiveHighStraight) {
       this.ranks = [5, 4, 3, 2, 1];
     } else if (fullHouse) {
-      const [triple] = rankCounts.entries().find(([_, v]) => v == 3)!;
-      const [pair] = rankCounts.entries().find(([_, v]) => v == 2)!;
-      this.ranks = [triple, triple, triple, pair, pair];
+      this.ranks = [triple!, triple!, triple!, pair!, pair!];
     } else {
       this.ranks = sortedRanks.toSorted((a, b) => {
         if (rankCounts[a] != rankCounts[b])
