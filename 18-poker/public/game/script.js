@@ -3,6 +3,22 @@ import { io } from "/socket.io-client/socket.io.esm.min.js";
 const gameContainer = document.querySelector(".game-container");
 const handInfo = document.querySelector("#hand-info");
 
+const cardElements = Array.from({ length: 7 }, (_, i) =>
+  document.querySelector(`#card${i}`),
+);
+
+let fourColor = false;
+
+document.querySelector("#four-color-toggle").addEventListener("click", (e) => {
+  fourColor = !fourColor;
+  e.target.textContent = fourColor ? "Use Two Colors" : "Use Four Colors";
+  const color = fourColor ? "#000,#f00,#04f,#080" : "#000,#f00,#f00,#000";
+  cardElements.map((c) => {
+    c.suitcolor = color;
+    c.rankcolor = color;
+  });
+});
+
 const gameId = window.location.pathname.split("/").pop();
 const socket = io();
 let joinedGame = false;
@@ -183,17 +199,17 @@ document.querySelector("#advance").addEventListener("click", () => {
 });
 
 socket.on("newHand", ({ message, hand }) => {
-  console.log(message, hand);
+  console.log(message);
   handInfo.classList.add("hide");
 
   for (let i = 0; i < 7; i++) {
-    const cardElement = document.querySelector(`#card${i}`);
+    const cardElement = cardElements[i];
     cardElement.classList.remove("best");
     cardElement.classList.remove("active");
   }
 
   for (let i = 0; i < 2; i++) {
-    const cardElement = document.querySelector(`#card${i}`);
+    const cardElement = cardElements[i];
     const card = hand[i];
     cardElement.classList.add("best");
     cardElement.classList.add("active");
@@ -206,7 +222,7 @@ socket.on("communityCards", ({ message, cards }) => {
   console.log(message);
 
   for (let i = 0; i < 5; i++) {
-    const cardElement = document.querySelector(`#card${i + 2}`);
+    const cardElement = cardElements[i + 2];
     const card = cards[i];
     if (!card) {
       cardElement.classList.remove("active");
@@ -219,12 +235,12 @@ socket.on("communityCards", ({ message, cards }) => {
 });
 
 socket.on("evaluatedHand", ({ message, result }) => {
-  console.log(message, result);
+  console.log(message);
 
   handInfo.classList.remove("hide");
 
   for (let i = 0; i < 7; i++) {
-    const cardElement = document.querySelector(`#card${i}`);
+    const cardElement = cardElements[i];
     if (result.indices.includes(i)) {
       cardElement.classList.add("best");
     } else {
