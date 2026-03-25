@@ -96,10 +96,14 @@ class EvaluatedHand {
     if (flush && straight) {
       if (sortedRanks[0] == 14) {
         this.type = HandType.RoyalFlush;
-        this.info = [];
+        this.info = [sortedRanks[0]!];
       } else {
         this.type = HandType.StraightFlush;
-        this.info = [sortedRanks[0]!];
+        if (fiveHighStraight) {
+          this.info = [sortedRanks[1]!];
+        } else {
+          this.info = [sortedRanks[0]!];
+        }
       }
     } else if (fourOfAKind) {
       this.type = HandType.FourOfAKind;
