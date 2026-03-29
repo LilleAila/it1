@@ -27,6 +27,10 @@
 
       <br />
 
+      <div class="loading">
+        <h1>Loading game...</h1>
+      </div>
+
       <div class="admin-container">
         <div class="requested-seats">
           <h2>Pending requests</h2>
@@ -113,20 +117,22 @@
           <playing-card rank="A" suit="Spades" id="card6"></playing-card>
         </div>
 
-        <h2>Hole Cards</h2>
-        <div class="cards hole-cards">
-          <playing-card rank="A" suit="Spades" id="card0"></playing-card>
-          <playing-card rank="A" suit="Spades" id="card1"></playing-card>
-        </div>
+        <div class="hide-spectating">
+          <h2>Hole Cards</h2>
+          <div class="cards hole-cards">
+            <playing-card rank="A" suit="Spades" id="card0"></playing-card>
+            <playing-card rank="A" suit="Spades" id="card1"></playing-card>
+          </div>
 
-        <p id="hand-info" class="hide">Insert Hand Info</p>
+          <p id="hand-info" class="hide">Insert Hand Info</p>
 
-        <h2>Actions</h2>
-        <div class="player-actions">
-          <button>Check</button>
-          <button>Call</button>
-          <button>Raise</button>
-          <button>Fold</button>
+          <h2>Actions</h2>
+          <div class="player-actions">
+            <button>Check</button>
+            <button>Call</button>
+            <button>Raise</button>
+            <button>Fold</button>
+          </div>
         </div>
       </div>
     </main>

@@ -123,9 +123,23 @@ input {
       display: none;
     }
 
+    .hide-spectating {
+      display: none;
+    }
+
+    playing-card {
+      opacity: 1 !important;
+    }
+  }
+
+  &:not(.loaded) {
     .game {
       display: none;
     }
+  }
+
+  &.loaded .loading {
+    display: none;
   }
 
   &:not(.admin) {

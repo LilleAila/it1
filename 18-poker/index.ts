@@ -16,6 +16,7 @@ const io = new Server(httpServer, {
 app.use(cors());
 app.use(express.static("public"));
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 app.use(
   "/socket.io-client",
@@ -120,7 +121,11 @@ class EvaluatedHand {
       this.info = [];
     } else if (straight) {
       this.type = HandType.Straight;
-      this.info = [sortedRanks[0]!];
+      if (fiveHighStraight) {
+        this.info = [sortedRanks[1]!];
+      } else {
+        this.info = [sortedRanks[0]!];
+      }
     } else if (threeOfAKind) {
       this.type = HandType.ThreeOfAKind;
       this.info = [sortedRanks[2]!];
@@ -304,6 +309,8 @@ class Game {
       player.isAdmin = true;
       this.admin = player.id;
     }
+
+    return player;
   }
 
   removePlayer(id: string): Player | undefined {
@@ -327,9 +334,10 @@ class Game {
     return true;
   }
 
-  approveJoin(playerId: string) {
-    this.addPlayer(this.requestedSeats[playerId]!);
+  approveJoin(playerId: string): Player {
+    const player = this.addPlayer(this.requestedSeats[playerId]!);
     delete this.requestedSeats[playerId];
+    return player;
   }
 
   declineJoin(playerId: string) {
@@ -382,7 +390,7 @@ class Game {
         for (const p of this.players) {
           io.to(p.id).emit("newHand", { message: "Dealt Hand", hand: p.hand });
         }
-        io.to(this.id).emit("communityCards", {
+        io.to(`game-${this.id}`).emit("communityCards", {
           message: "New Round",
           cards: this.communityCards,
         });
@@ -390,10 +398,11 @@ class Game {
         this.stage = GameStage.Flop;
         break;
       case GameStage.Flop:
+        this.drawCard(); // Burn card
+        this.dealCard(); // Deal flop
         this.dealCard();
         this.dealCard();
-        this.dealCard();
-        io.to(this.id).emit("communityCards", {
+        io.to(`game-${this.id}`).emit("communityCards", {
           message: "Dealt Flop",
           cards: this.communityCards,
         });
@@ -402,8 +411,9 @@ class Game {
         this.stage = GameStage.Turn;
         break;
       case GameStage.Turn:
-        this.dealCard();
-        io.to(this.id).emit("communityCards", {
+        this.drawCard(); // Burn card
+        this.dealCard(); // Deal turn
+        io.to(`game-${this.id}`).emit("communityCards", {
           message: "Dealt Turn",
           cards: this.communityCards,
         });
@@ -412,8 +422,9 @@ class Game {
         this.stage = GameStage.River;
         break;
       case GameStage.River:
-        this.dealCard();
-        io.to(this.id).emit("communityCards", {
+        this.drawCard(); // Burn card
+        this.dealCard(); // Deal river
+        io.to(`game-${this.id}`).emit("communityCards", {
           message: "Dealt River",
           cards: this.communityCards,
         });
@@ -512,7 +523,7 @@ io.on("connection", (socket) => {
 
     game.options = options as GameOptions;
 
-    io.to(gameId).emit("gameOptions", {
+    io.to(`game-${gameId}`).emit("gameOptions", {
       message: "Options Changed",
       options: game.getOptions(),
     });
@@ -522,7 +533,7 @@ io.on("connection", (socket) => {
     const game = pokerServer.getGame(gameId);
     if (!game) return;
 
-    socket.join(gameId);
+    socket.join(`game-${gameId}`);
     socket.data.gameId = gameId;
 
     if (!game.hasPlayer(socket.id)) {
@@ -542,9 +553,9 @@ io.on("connection", (socket) => {
           options: game.getOptions(),
         });
 
-        io.to(gameId).emit("gameState", {
+        io.to(`game-${gameId}`).emit("playerJoined", {
           message: "Player Joined",
-          state: game.getPublicState(),
+          player: player,
         });
       } else {
         if (game.requestJoin(player)) {
@@ -562,7 +573,7 @@ io.on("connection", (socket) => {
     if (!game) return;
 
     if (approved) {
-      game.approveJoin(playerId);
+      const player = game.approveJoin(playerId);
 
       io.to(playerId).emit("playerState", {
         message: "Joined Game",
@@ -576,9 +587,9 @@ io.on("connection", (socket) => {
         options: game.getOptions(),
       });
 
-      io.to(gameId).emit("gameState", {
+      io.to(`game-${gameId}`).emit("playerJoined", {
         message: "Player Joined",
-        state: game.getPublicState(),
+        player: player,
       });
     } else {
       game.declineJoin(playerId);
@@ -596,14 +607,14 @@ io.on("connection", (socket) => {
     if (!game) return;
 
     socket.data.gameId = gameId;
+    const playerId = socket.id;
 
-    if (game.hasPlayer(socket.id)) {
-      const newAdmin = game.removePlayer(socket.id);
-      socket.leave(gameId);
+    if (game.hasPlayer(playerId)) {
+      const newAdmin = game.removePlayer(playerId);
 
-      io.to(gameId).emit("gameState", {
+      io.to(`game-${gameId}`).emit("playerLeft", {
         message: "Player Left",
-        state: game.getPublicState(),
+        playerId,
       });
 
       socket.emit("playerState", {
@@ -631,12 +642,14 @@ io.on("connection", (socket) => {
       const game = pokerServer.getGame(gameId);
       if (!game) return;
 
-      console.log(`User ${socket.id} disconnected from game ${gameId}`);
-      const newAdmin = game.removePlayer(socket.id);
+      const playerId = socket.id;
 
-      io.to(gameId).emit("gameState", {
+      console.log(`User ${playerId} disconnected from game ${gameId}`);
+      const newAdmin = game.removePlayer(playerId);
+
+      io.to(`game-${gameId}`).emit("playerLeft", {
         message: "Player Left",
-        state: game.getPublicState(),
+        playerId,
       });
 
       if (newAdmin) {
@@ -644,10 +657,27 @@ io.on("connection", (socket) => {
           message: "Assigned as admin",
           joined: true,
           admin: true,
-          player: game.getPlayer(socket.id),
+          player: newAdmin,
         });
       }
     }
+  });
+});
+
+app.post("/api/games/:gameId/join", (req, res) => {
+  const { gameId } = req.params;
+  const { socketId } = req.body;
+
+  const game = pokerServer.getGame(gameId);
+  if (!game) return res.status(404).json({ error: "Game not found" });
+
+  const socket = io.sockets.sockets.get(socketId);
+  if (!socket) return res.status(404).json({ error: "Socket not found" });
+  socket.join(`game-${gameId}`);
+
+  return res.status(200).json({
+    success: true,
+    gameState: game.getPublicState(),
   });
 });
 

@@ -74,21 +74,25 @@ document.querySelector("#back-button").addEventListener("click", (_e) => {
   window.location.href = "/";
 });
 
-socket.on("gameState", ({ message, state }) => {
+socket.on("playerJoined", ({ message, player }) => {
   console.log(message);
-
-  document.querySelector("#players tbody").innerHTML = `
-    ${state.players
-      .map(
-        (p) => `
-      <tr ${p.id == playerSelf.id ? `class="self"` : ""}>
-        <td>${p.username}${p.isAdmin ? " (Admin)" : ""}</td>
-        <td>${p.stack}</td>
-      </tr>
-    `,
-      )
-      .join("")}
+  const tr = document.createElement("tr");
+  tr.id = `player-${player.id}`;
+  if (playerSelf.id == player.id) {
+    tr.classList.add("self");
+  }
+  tr.innerHTML = `
+    <td>${player.username}${player.isAdmin ? " (Admin)" : ""}</td>
+    <td>${player.stack}</td>
   `;
+  document.querySelector("#players tbody").appendChild(tr);
+});
+
+socket.on("playerLeft", ({ message, playerId }) => {
+  console.log(message);
+  console.log(playerId);
+  const playerElement = document.querySelector(`#player-${playerId}`);
+  playerElement.remove();
 });
 
 socket.on("playerState", (playerState) => {
@@ -123,6 +127,63 @@ document.querySelector("#game-options").addEventListener("submit", (e) => {
   const form = new FormData(e.target);
   const options = Object.fromEntries(form);
   socket.emit("updateOptions", { gameId, options });
+});
+
+function initializeGame(state) {
+  for (const player of state.players) {
+    const tr = document.createElement("tr");
+    tr.id = `player-${player.id}`;
+    if (playerSelf.id == player.id) {
+      tr.classList.add("self");
+    }
+    tr.innerHTML = `
+      <td>${player.username}${player.isAdmin ? " (Admin)" : ""}</td>
+      <td>${player.stack}</td>
+    `;
+    document.querySelector("#players tbody").appendChild(tr);
+  }
+  document.querySelector("#players tbody").innerHTML = `
+    ${state.players
+      .map(
+        (p) => `
+      <tr ${p.id == playerSelf.id ? `class="self"` : ""}>
+        <td>${p.username}${p.isAdmin ? " (Admin)" : ""}</td>
+        <td>${p.stack}</td>
+      </tr>
+    `,
+      )
+      .join("")}
+  `;
+
+  for (let i = 0; i < 5; i++) {
+    const cardElement = cardElements[i + 2];
+    const card = state.communityCards[i];
+    if (!card) {
+      cardElement.classList.remove("active");
+      continue;
+    }
+    cardElement.classList.add("active");
+    cardElement.rank = ranks[card.rank];
+    cardElement.suit = suits[card.suit];
+  }
+
+  gameContainer.classList.add("loaded");
+}
+
+socket.on("connect", async () => {
+  const socketId = socket.id;
+
+  const response = await fetch(`/api/games/${gameId}/join`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ socketId: socketId }),
+  });
+
+  const data = await response.json();
+  const { gameState } = data;
+
+  console.log("Loaded game state: ", gameState);
+  initializeGame(gameState);
 });
 
 socket.on("joinRequest", ({ message, player }) => {
