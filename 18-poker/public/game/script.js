@@ -79,7 +79,7 @@ socket.on("playerJoined", ({ message, player }) => {
   console.log(message);
   const tr = document.createElement("tr");
   tr.id = `player-${player.id}`;
-  if (playerSelf.id == player.id) {
+  if (userSelf.id == player.id) {
     tr.classList.add("self");
   }
   tr.innerHTML = `
@@ -135,7 +135,7 @@ function initializeGame(state) {
   for (const player of state.players) {
     const tr = document.createElement("tr");
     tr.id = `player-${player.id}`;
-    if (playerSelf.id == player.id) {
+    if (userSelf.id == player.id) {
       tr.classList.add("self");
     }
     tr.innerHTML = `
@@ -144,18 +144,6 @@ function initializeGame(state) {
     `;
     document.querySelector("#players tbody").appendChild(tr);
   }
-  document.querySelector("#players tbody").innerHTML = `
-    ${state.players
-      .map(
-        (p) => `
-      <tr ${p.id == playerSelf.id ? `class="self"` : ""}>
-        <td>${p.username}${p.isAdmin ? " (Admin)" : ""}</td>
-        <td>${p.stack}</td>
-      </tr>
-    `,
-      )
-      .join("")}
-  `;
 
   for (let i = 0; i < 5; i++) {
     const cardElement = cardElements[i + 2];
@@ -317,4 +305,9 @@ socket.on("evaluatedHand", ({ message, result }) => {
       ? ` (${result.bestHand.info.map((x) => ranks[x]).join(", ")})`
       : "";
   handInfo.textContent = handTypes[result.bestHand.type] + infoText;
+});
+
+socket.on("test123", ({ abc }) => {
+  console.log("dioafjldskjf");
+  console.log(abc);
 });

@@ -1,5 +1,6 @@
 import crypto from "crypto";
-import express, { Request, Response, NextFunction } from "express";
+import express from "express";
+import type { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import { createServer } from "http";
 import { Server } from "socket.io";
@@ -475,7 +476,7 @@ class Game {
   evaluateHands() {
     for (const p of this.players) {
       const h = bestHand(p.hand!, this.communityCards);
-      io.to(p.id).emit("evaluatedHand", {
+      io.to(`player-${p.id}`).emit("evaluatedHand", {
         message: "Evaluated Hand",
         result: h,
       });
@@ -490,7 +491,10 @@ class Game {
         this.shuffleDeck();
         this.dealHoleCards();
         for (const p of this.players) {
-          io.to(p.id).emit("newHand", { message: "Dealt Hand", hand: p.hand });
+          io.to(`player-${p.id}`).emit("newHand", {
+            message: "Dealt Hand",
+            hand: p.hand,
+          });
         }
         io.to(`game-${this.id}`).emit("communityCards", {
           message: "New Round",
@@ -593,8 +597,10 @@ app.post("/join-game", (req, res) => {
   }
 });
 
-app.get("/game/:id", (req, res) => {
+app.get("/game/:id", authenticate, (req, res) => {
   const { id } = req.params;
+  if (!id || typeof id != "string")
+    return res.status(404).json({ error: "Invalid ID" });
   const game = pokerServer.getGame(id);
   if (!game) {
     return res.status(404).send("Game not found");
@@ -604,14 +610,13 @@ app.get("/game/:id", (req, res) => {
 
 // Websockets / socket.io
 io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
+  console.log("User connected:", socket.data.user.id);
 
   socket.on("advanceGame", ({ gameId }) => {
     const game = pokerServer.getGame(gameId);
     if (!game) return;
 
-    const username = socket.id;
-    if (username != game.admin) return;
+    if (socket.data.user.id != game.admin) return;
 
     game.advance();
   });
@@ -620,7 +625,7 @@ io.on("connection", (socket) => {
     const game = pokerServer.getGame(gameId);
     if (!game) return;
 
-    const username = socket.id;
+    const username = socket.data.user.username;
     if (username != game.admin) return;
 
     game.options = options as GameOptions;
@@ -635,11 +640,13 @@ io.on("connection", (socket) => {
     const game = pokerServer.getGame(gameId);
     if (!game) return;
 
-    socket.join(`game-${gameId}`);
-    socket.data.gameId = gameId;
+    const player = new Player(
+      socket.data.user.id,
+      socket.data.user.username,
+      stack,
+    );
 
-    if (!game.hasPlayer(socket.id)) {
-      const player = new Player(socket.id, socket.id, stack);
+    if (!game.hasPlayer(socket.data.user.id)) {
       if (game.nPlayers() < 1) {
         game.addPlayer(player);
 
@@ -661,7 +668,7 @@ io.on("connection", (socket) => {
         });
       } else {
         if (game.requestJoin(player)) {
-          io.to(game.admin).emit("joinRequest", {
+          io.to(`player-${game.admin}`).emit("joinRequest", {
             message: "Player requested a seat",
             player,
           });
@@ -674,17 +681,19 @@ io.on("connection", (socket) => {
     const game = pokerServer.getGame(gameId);
     if (!game) return;
 
+    if (socket.data.user.id != game.admin) return;
+
     if (approved) {
       const player = game.approveJoin(playerId);
 
-      io.to(playerId).emit("playerState", {
+      io.to(`player-${player.id}`).emit("playerState", {
         message: "Joined Game",
         joined: true,
         admin: false,
-        player: game.getPlayer(playerId),
+        player: player,
       });
 
-      io.to(playerId).emit("gameOptions", {
+      io.to(`player-${player.id}`).emit("gameOptions", {
         message: "Options Changed",
         options: game.getOptions(),
       });
@@ -696,7 +705,7 @@ io.on("connection", (socket) => {
     } else {
       game.declineJoin(playerId);
 
-      io.to(playerId).emit("playerState", {
+      io.to(`player-${playerId}`).emit("playerState", {
         message: "Seat Declined",
         joined: false,
         admin: false,
@@ -708,8 +717,7 @@ io.on("connection", (socket) => {
     const game = pokerServer.getGame(gameId);
     if (!game) return;
 
-    socket.data.gameId = gameId;
-    const playerId = socket.id;
+    const playerId = socket.data.user.id;
 
     if (game.hasPlayer(playerId)) {
       const newAdmin = game.removePlayer(playerId);
@@ -727,7 +735,7 @@ io.on("connection", (socket) => {
       });
 
       if (newAdmin) {
-        io.to(newAdmin.id).emit("playerState", {
+        io.to(`player-${newAdmin.id}`).emit("playerState", {
           message: "Assigned as admin",
           joined: true,
           admin: true,
@@ -744,7 +752,7 @@ io.on("connection", (socket) => {
       const game = pokerServer.getGame(gameId);
       if (!game) return;
 
-      const playerId = socket.id;
+      const playerId = socket.data.user.id;
 
       console.log(`User ${playerId} disconnected from game ${gameId}`);
       const newAdmin = game.removePlayer(playerId);
@@ -755,7 +763,7 @@ io.on("connection", (socket) => {
       });
 
       if (newAdmin) {
-        io.to(newAdmin.id).emit("playerState", {
+        io.to(`player-${newAdmin.id}`).emit("playerState", {
           message: "Assigned as admin",
           joined: true,
           admin: true,
@@ -784,7 +792,9 @@ app.post("/api/games/:gameId/join", authenticate, (req, res) => {
     return res.status(403).json({ error: "Identity mismatch" });
   }
 
+  socket.data.gameId = gameId;
   socket.join(`game-${gameId}`);
+  socket.join(`player-${socket.data.user.id}`);
 
   return res.status(200).json({
     success: true,
