@@ -3,6 +3,10 @@ import express from "express";
 import cors from "cors";
 import { createServer } from "http";
 import { Server } from "socket.io";
+import { db } from "./db";
+import { migrate } from "./migrate";
+
+migrate();
 
 const PORT = 3000;
 const app = express();
