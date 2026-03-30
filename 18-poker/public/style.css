@@ -247,3 +247,48 @@ input {
     }
   }
 }
+
+#auth-form {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin: 1rem;
+
+  label:has(input) {
+    grid-column: span 2;
+  }
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+}
+
+#logout-form {
+  margin: 1rem;
+  text-align: center;
+
+  button {
+    width: 15rem;
+  }
+}
+
+.content {
+  &:not(.authenticated) {
+    .logged-in {
+      display: none;
+    }
+  }
+
+  &.authenticated {
+    .not-logged-in {
+      display: none;
+    }
+  }
+
+  .logged-in,
+  .not-logged-in {
+    text-align: center;
+  }
+}

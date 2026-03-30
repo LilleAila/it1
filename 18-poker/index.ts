@@ -1,12 +1,17 @@
 import crypto from "crypto";
-import express from "express";
+import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import { db } from "./db";
 import { migrate } from "./migrate";
+import jwt from "jsonwebtoken";
+import cookieParser from "cookie-parser";
+import cookie from "cookie";
 
 migrate();
+
+const SECRET = "abcdefg"; // TODO env file lol
 
 const PORT = 3000;
 const app = express();
@@ -18,6 +23,7 @@ const io = new Server(httpServer, {
 });
 
 app.use(cors());
+app.use(cookieParser());
 app.use(express.static("public"));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -26,8 +32,100 @@ app.use(
   "/socket.io-client",
   express.static("node_modules/socket.io-client/dist"),
 );
-
 app.use("/cardmeister", express.static("node_modules/playingcardts"));
+
+interface User {
+  id: number;
+  username: string;
+}
+
+function authenticate(req: Request, res: Response, next: NextFunction) {
+  const token = req.cookies.auth_token;
+  if (!token) return res.status(401).json({ error: "Not logged in" });
+
+  try {
+    const decoded = jwt.verify(token, SECRET) as User;
+    (req as any).user = decoded;
+    next();
+  } catch (err) {
+    res.status(401).json({ error: "Invalid session" });
+  }
+}
+
+io.use((socket, next) => {
+  const header = socket.handshake.headers.cookie;
+  if (!header) return next(new Error("Authentication error: No cookie"));
+
+  const cookies = cookie.parse(header);
+  const token = cookies.auth_token;
+  if (!token) return next(new Error("Authentication error: Invalid token"));
+
+  try {
+    const decoded = jwt.verify(token, SECRET) as User;
+    socket.data.user = decoded;
+    next();
+  } catch (err) {
+    next(new Error("Authentication error: Invalid token"));
+  }
+});
+
+function setAuthCookie(res: Response, user: User) {
+  const token = jwt.sign(user, SECRET, { expiresIn: "24h" });
+  res.cookie("auth_token", token, {
+    httpOnly: true,
+    sameSite: "strict",
+    maxAge: 86400000, // 24h
+  });
+}
+
+app.post("/signup", async (req, res) => {
+  const { username, password } = req.body;
+  const hash = await Bun.password.hash(password);
+
+  try {
+    const result = db
+      .prepare(
+        "INSERT INTO users (username, password_hash) VALUES (?, ?) RETURNING id, username",
+      )
+      .get(username, hash) as User;
+    setAuthCookie(res, result);
+    res.redirect("/");
+  } catch (e) {
+    res.status(400).json({ error: "Username taken" });
+  }
+});
+
+app.post("/login", async (req, res) => {
+  const { username, password } = req.body;
+  const user: any = db
+    .query("SELECT * FROM users WHERE username = ?")
+    .get(username);
+
+  if (user && (await Bun.password.verify(password, user.password_hash))) {
+    setAuthCookie(res, { id: user.id, username: user.username } as User);
+    return res.redirect("/");
+  }
+  res
+    .status(401)
+    .json({ error: "Invalid credentials. <a href='/'>Try again</a>" });
+});
+
+app.post("/logout", (_req, res) => {
+  res.clearCookie("auth_token");
+  res.redirect("/");
+});
+
+app.get("/me", (req, res) => {
+  const token = req.cookies.auth_token;
+  if (!token) return res.status(401).json({ loggedIn: false });
+
+  try {
+    const decoded = jwt.verify(token, SECRET);
+    res.json({ loggedIn: true, user: decoded });
+  } catch {
+    res.status(401).json({ loggedIn: false });
+  }
+});
 
 enum Suit {
   Clubs = 0,
@@ -668,20 +766,30 @@ io.on("connection", (socket) => {
   });
 });
 
-app.post("/api/games/:gameId/join", (req, res) => {
+app.post("/api/games/:gameId/join", authenticate, (req, res) => {
   const { gameId } = req.params;
   const { socketId } = req.body;
+
+  if (!gameId || typeof gameId != "string")
+    return res.status(404).json({ error: "Invalid game id" });
 
   const game = pokerServer.getGame(gameId);
   if (!game) return res.status(404).json({ error: "Game not found" });
 
   const socket = io.sockets.sockets.get(socketId);
   if (!socket) return res.status(404).json({ error: "Socket not found" });
+
+  const httpUser = (req as any).user;
+  if (socket.data.user.id !== httpUser.id) {
+    return res.status(403).json({ error: "Identity mismatch" });
+  }
+
   socket.join(`game-${gameId}`);
 
   return res.status(200).json({
     success: true,
     gameState: game.getPublicState(),
+    user: socket.data.user,
   });
 });
 

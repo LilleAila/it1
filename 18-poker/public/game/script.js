@@ -24,6 +24,7 @@ const socket = io();
 let joinedGame = false;
 let joinRequests = {};
 let playerSelf = {};
+let userSelf = {};
 
 const ranks = [
   "",
@@ -130,6 +131,7 @@ document.querySelector("#game-options").addEventListener("submit", (e) => {
 });
 
 function initializeGame(state) {
+  document.querySelector("#username").textContent = userSelf.username;
   for (const player of state.players) {
     const tr = document.createElement("tr");
     tr.id = `player-${player.id}`;
@@ -180,9 +182,10 @@ socket.on("connect", async () => {
   });
 
   const data = await response.json();
-  const { gameState } = data;
+  const { gameState, user } = data;
 
-  console.log("Loaded game state: ", gameState);
+  console.log("Loaded game state");
+  userSelf = user;
   initializeGame(gameState);
 });
 

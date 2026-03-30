@@ -6,24 +6,57 @@
     <title>Poker</title>
     <link rel="stylesheet" href="style.css" />
     <link rel="icon" href="favicon.png" />
+    <script src="script.js" type="module" defer></script>
   </head>
   <body>
-    <main>
+    <main class="content">
       <h1>En pokernettside som er bedre enn didrik sin</h1>
 
-      <div class="game-buttons">
-        <form action="/new-game" method="POST">
-          <button type="submit">New game</button>
+      <div class="not-logged-in">
+        <form method="POST" id="auth-form">
+          <label>
+            <span>Username</span>
+            <input
+              type="text"
+              name="username"
+              placeholder="Username"
+              required
+            />
+          </label>
+          <label>
+            <span>Password</span>
+            <input
+              type="password"
+              name="password"
+              placeholder="Password"
+              required
+            />
+          </label>
+
+          <button type="submit" formaction="/login">Log In</button>
+          <button type="submit" formaction="/signup">Sign Up</button>
         </form>
-        <form action="/join-game" method="POST">
-          <button type="submit">Join an existing game</button>
-          <input
-            type="text"
-            name="gameId"
-            placeholder="Enter Game ID"
-            required
-          />
+      </div>
+
+      <div class="logged-in">
+        <h2>Logged in as <span id="username"></span></h2>
+        <form method="POST" action="/logout" id="logout-form">
+          <button type="submit">Sign out</button>
         </form>
+        <div class="game-buttons">
+          <form action="/new-game" method="POST">
+            <button type="submit">New game</button>
+          </form>
+          <form action="/join-game" method="POST">
+            <button type="submit">Join an existing game</button>
+            <input
+              type="text"
+              name="gameId"
+              placeholder="Enter Game ID"
+              required
+            />
+          </form>
+        </div>
       </div>
     </main>
 
