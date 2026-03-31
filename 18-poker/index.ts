@@ -331,6 +331,13 @@ enum GameStage {
   Showdown,
 }
 
+interface Bet {
+  player: string;
+  type: "none" | "bet" | "fold"; // Grouping check, call and raise into the same type
+  value: number;
+  allIn: boolean;
+}
+
 class Game {
   public readonly id: string;
   public players: Player[];
@@ -342,6 +349,11 @@ class Game {
   public admin: string;
   public options: GameOptions;
   public stage: GameStage = GameStage.PreFlop;
+
+  public bettingPlayer: number = 0;
+  public currentBet: number = 0;
+  public bets: Bet[] = [];
+  public stageFinished: boolean = true;
 
   public requestedSeats: Record<string, Player>;
 
@@ -358,6 +370,7 @@ class Game {
       turnTime: 30,
     };
     this.requestedSeats = {};
+
     this.initDeck();
   }
 
@@ -483,7 +496,154 @@ class Game {
     }
   }
 
+  nextBet() {
+    const n = this.players.length;
+    // this.bettingPlayer = (this.bettingPlayer - 1 + n) % n;
+    let next = this.bettingPlayer;
+
+    for (let i = 0; i < n; i++) {
+      next = (this.bettingPlayer - 1 + n) % n;
+      const bet = this.bets[next]!;
+      if (bet.type != "fold" && !bet.allIn) {
+        this.bettingPlayer = next;
+        return;
+      }
+    }
+
+    throw new Error("No eligible players left to bet");
+  }
+
+  emitBets() {
+    io.to(`game-${this.id}`).emit("betsUpdated", {
+      pot: this.pot,
+      bet: this.currentBet,
+      bets: this.bets,
+      players: this.players,
+      bettingPlayer: this.players[this.bettingPlayer]!.id,
+    });
+  }
+
+  bet(value: number, blind: boolean = false) {
+    const stack = this.players[this.bettingPlayer]!.stack;
+    const bet = Math.min(value, stack);
+    this.bets[this.bettingPlayer] = {
+      // Whether to count as an action or not.
+      // used to determine when the round is over
+      player: this.players[this.bettingPlayer]!.id,
+      type: blind ? "none" : "bet",
+      value: bet,
+      allIn: stack <= value,
+    };
+
+    this.currentBet = Math.max(this.currentBet, bet);
+    this.players[this.bettingPlayer]!.stack -= bet;
+    this.pot += bet;
+    this.emitBets();
+  }
+
+  blinds() {
+    this.bet(this.options.smallBlind, true);
+    this.nextBet();
+    this.bet(this.options.bigBlind, true);
+    this.nextBet();
+  }
+
+  betting() {
+    if (this.stage == GameStage.PreFlop) {
+      this.bets = Array.from({ length: this.players.length }, (_, i) => {
+        return {
+          player: this.players[i]!.id,
+          type: "none",
+          value: 0,
+          allIn: false,
+        };
+      });
+    } else {
+      for (let i = 0; i < this.bets.length; i++) {
+        const prevBet = this.bets[i]!;
+        this.bets[i]!.type = prevBet.type == "fold" ? "fold" : "none";
+      }
+    }
+    this.bettingPlayer = this.dealer;
+    this.nextBet();
+    this.emitBets();
+  }
+
+  advertiseBet() {
+    const bettingPlayer = this.players[this.bettingPlayer];
+    if (!bettingPlayer) throw new Error("Betting player not found");
+    io.to(`player-${bettingPlayer.id}`).emit("bet", {
+      bet: true,
+      currentBet: this.currentBet,
+    });
+  }
+
+  endBet() {
+    const bettingPlayer = this.players[this.bettingPlayer];
+    if (!bettingPlayer) throw new Error("Betting player not found");
+    io.to(`player-${bettingPlayer.id}`).emit("bet", {
+      bet: false,
+    });
+    if (
+      this.bets.every(
+        ({ type, value, allIn }) =>
+          type == "fold" ||
+          (type == "bet" && value == this.currentBet) ||
+          allIn,
+      )
+    ) {
+      this.stageFinished = true;
+      this.advance();
+      return;
+    }
+    this.nextBet();
+    this.advertiseBet();
+  }
+
+  receiveResponse({
+    action,
+    bet,
+  }: {
+    action: string;
+    bet: number | undefined;
+  }) {
+    const bettingPlayer = this.players[this.bettingPlayer];
+    if (!bettingPlayer) throw new Error("Betting player not found");
+
+    const prevBet = this.bets[this.bettingPlayer]!;
+
+    switch (action) {
+      case "fold":
+        this.bets[this.bettingPlayer]!.type = "fold";
+        this.emitBets();
+        this.endBet();
+        break;
+      case "check":
+        if (prevBet.value < this.currentBet)
+          throw new Error("Bet is too low, cannot check.");
+        this.bet(this.currentBet!);
+        this.endBet();
+        break;
+      case "call":
+        this.bet(this.currentBet);
+        this.endBet();
+        break;
+      case "raise":
+        if (!bet) throw new Error("Invalid bet");
+        if (bet <= this.currentBet) throw new Error("Raise too low");
+        // Shouldn't actually be necessary because the == currentBet check above
+        // for (let i = 0; i < this.bets.length; i++) {
+        //   this.bets[i]!.type = "none"; // Give everyone else another turn
+        // }
+        this.bet(bet);
+        this.endBet();
+        break;
+    }
+  }
+
   advance() {
+    if (!this.stageFinished) return;
+    this.stageFinished = false;
     switch (this.stage) {
       case GameStage.PreFlop:
         this.communityCards = [];
@@ -501,6 +661,9 @@ class Game {
           cards: this.communityCards,
         });
         // blinds, betting round
+        this.betting();
+        this.blinds();
+        this.advertiseBet();
         this.stage = GameStage.Flop;
         break;
       case GameStage.Flop:
@@ -514,6 +677,8 @@ class Game {
         });
         this.evaluateHands();
         // betting round
+        this.betting();
+        this.advertiseBet();
         this.stage = GameStage.Turn;
         break;
       case GameStage.Turn:
@@ -524,6 +689,8 @@ class Game {
           cards: this.communityCards,
         });
         this.evaluateHands();
+        this.betting();
+        this.advertiseBet();
         // betting round
         this.stage = GameStage.River;
         break;
@@ -535,7 +702,11 @@ class Game {
           cards: this.communityCards,
         });
         this.evaluateHands();
+        this.betting();
+        this.advertiseBet();
         // final betting round, finish round etc
+        this.dealer =
+          (this.dealer - 1 + this.players.length) % this.players.length;
         this.stage = GameStage.PreFlop;
         break;
     }
@@ -625,8 +796,7 @@ io.on("connection", (socket) => {
     const game = pokerServer.getGame(gameId);
     if (!game) return;
 
-    const username = socket.data.user.username;
-    if (username != game.admin) return;
+    if (socket.data.user.id != game.admin) return;
 
     game.options = options as GameOptions;
 
@@ -742,6 +912,19 @@ io.on("connection", (socket) => {
           player: newAdmin,
         });
       }
+    }
+  });
+
+  socket.on("betResponse", (r) => {
+    const { gameId } = socket.data;
+    if (!gameId) return;
+    const game = pokerServer.getGame(gameId);
+    if (!game) return;
+
+    try {
+      game.receiveResponse(r);
+    } catch (err) {
+      return; // Just ignore invalid bets
     }
   });
 

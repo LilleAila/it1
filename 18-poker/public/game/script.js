@@ -1,6 +1,7 @@
 import { io } from "/socket.io-client/socket.io.esm.min.js";
 
 const gameContainer = document.querySelector(".game-container");
+const actionsContainer = document.querySelector("#actions-container");
 const handInfo = document.querySelector("#hand-info");
 
 const cardElements = Array.from({ length: 7 }, (_, i) =>
@@ -25,6 +26,9 @@ let joinedGame = false;
 let joinRequests = {};
 let playerSelf = {};
 let userSelf = {};
+let currentBet = 0;
+let currentPot = 0;
+let bets = [];
 
 const ranks = [
   "",
@@ -84,7 +88,8 @@ socket.on("playerJoined", ({ message, player }) => {
   }
   tr.innerHTML = `
     <td>${player.username}${player.isAdmin ? " (Admin)" : ""}</td>
-    <td>${player.stack}</td>
+    <td class="player-stack">${player.stack}</td>
+    <td class="player-state"></td>
   `;
   document.querySelector("#players tbody").appendChild(tr);
 });
@@ -140,7 +145,8 @@ function initializeGame(state) {
     }
     tr.innerHTML = `
       <td>${player.username}${player.isAdmin ? " (Admin)" : ""}</td>
-      <td>${player.stack}</td>
+      <td class="player-stack">${player.stack}</td>
+      <td class="player-state"></td>
     `;
     document.querySelector("#players tbody").appendChild(tr);
   }
@@ -307,7 +313,78 @@ socket.on("evaluatedHand", ({ message, result }) => {
   handInfo.textContent = handTypes[result.bestHand.type] + infoText;
 });
 
-socket.on("test123", ({ abc }) => {
-  console.log("dioafjldskjf");
-  console.log(abc);
+socket.on("bet", (b) => {
+  if (b.bet) {
+    actionsContainer.querySelectorAll("button, input").forEach((b) => {
+      b.disabled = false;
+    });
+    actionsContainer.classList.add("my-turn");
+  } else {
+    actionsContainer.classList.remove("my-turn");
+    actionsContainer.querySelectorAll("button, input").forEach((b) => {
+      b.disabled = true;
+    });
+  }
+});
+
+socket.on("betsUpdated", ({ pot, bet, bets, players, bettingPlayer }) => {
+  currentBet = bet;
+  actionsContainer.querySelector("#current-bet").textContent = currentBet;
+  document.querySelector("#pot-value").textContent = pot;
+
+  for (const bet of bets) {
+    const playerTr = document.querySelector(`#player-${bet.player}`);
+    const stateTd = playerTr.querySelector(".player-state");
+    if (bet.type == "fold") {
+      stateTd.textContent = "Folded";
+    } else if (bet.allIn) {
+      stateTd.textContent = "All In";
+    } else {
+      stateTd.textContent = "";
+    }
+  }
+
+  for (const player of players) {
+    const playerTr = document.querySelector(`#player-${player.id}`);
+    playerTr.querySelector(".player-stack").textContent = player.stack;
+  }
+
+  document.querySelectorAll("#players tr").forEach((p) => {
+    p.classList.remove("current-bet");
+  });
+  document
+    .querySelector(`#player-${bettingPlayer}`)
+    .classList.add("current-bet");
+});
+
+document.querySelector("#check-btn").addEventListener("click", () => {
+  socket.emit("betResponse", {
+    action: "check",
+  });
+});
+
+document.querySelector("#call-btn").addEventListener("click", () => {
+  socket.emit("betResponse", {
+    action: "call",
+  });
+});
+
+document.querySelector("#raise-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+
+  const form = new FormData(e.target);
+  const data = Object.fromEntries(form);
+
+  socket.emit("betResponse", {
+    action: "raise",
+    bet: data.bet,
+  });
+
+  e.preventDefault();
+});
+
+document.querySelector("#fold-btn").addEventListener("click", () => {
+  socket.emit("betResponse", {
+    action: "fold",
+  });
 });

@@ -65,14 +65,21 @@ a.button {
   justify-content: center;
   transform: scale(1);
   width: 100%;
-  cursor: pointer;
 
-  &:hover {
+  &:not([disabled]):hover {
     transform: scale(1.1);
   }
 
-  &:active {
+  &:not([disabled]):active {
     transform: scale(1.05);
+  }
+
+  &[disabled] {
+    opacity: 0.7;
+  }
+
+  &:not([disabled]) {
+    cursor: pointer;
   }
 }
 
@@ -216,11 +223,6 @@ input {
       visibility: hidden;
     }
   }
-
-  .player-actions {
-    display: flex;
-    gap: 1rem;
-  }
 }
 
 #players {
@@ -229,8 +231,14 @@ input {
 
   tr {
     border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+
     &.self {
-      border-color: var(--base0B);
+      border-left: 6px solid var(--base0B);
+    }
+
+    &.current-bet {
+      border-right: 6px solid var(--base08);
     }
 
     td,
@@ -290,5 +298,18 @@ input {
   .logged-in,
   .not-logged-in {
     text-align: center;
+  }
+}
+
+#actions-container {
+  .actions {
+    display: flex;
+    gap: 1rem;
+
+    #raise-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
   }
 }

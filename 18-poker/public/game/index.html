@@ -105,9 +105,12 @@
           <thead>
             <th>Username</th>
             <th>Stack</th>
+            <th></th>
           </thead>
           <tbody></tbody>
         </table>
+
+        <h2>Pot: <span id="pot-value">0</span></h2>
 
         <h2>Community Cards</h2>
         <div class="cards community-cards">
@@ -127,12 +130,23 @@
 
           <p id="hand-info" class="hide">Insert Hand Info</p>
 
-          <h2>Actions</h2>
-          <div class="player-actions">
-            <button>Check</button>
-            <button>Call</button>
-            <button>Raise</button>
-            <button>Fold</button>
+          <div id="actions-container">
+            <h2>Current Bet: <span id="current-bet">0</span></h2>
+            <div class="actions">
+              <button id="check-btn" disabled>Check</button>
+              <button id="call-btn" disabled>Call</button>
+              <form id="raise-form">
+                <input
+                  name="bet"
+                  placeholder="Bet"
+                  type="number"
+                  required
+                  disabled
+                />
+                <button type="submit" disabled>Raise</button>
+              </form>
+              <button id="fold-btn" disabled>Fold</button>
+            </div>
           </div>
         </div>
       </div>
