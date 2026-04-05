@@ -338,6 +338,13 @@ interface Bet {
   allIn: boolean;
 }
 
+interface Winner {
+  playerIdx: number;
+  player: string;
+  handResult: HandResult;
+  bet: Bet;
+}
+
 class Game {
   public readonly id: string;
   public players: Player[];
@@ -349,6 +356,7 @@ class Game {
   public admin: string;
   public options: GameOptions;
   public stage: GameStage = GameStage.PreFlop;
+  public roundId: number = 0;
 
   public bettingPlayer: number = 0;
   public currentBet: number = 0;
@@ -592,8 +600,7 @@ class Game {
           allIn,
       )
     ) {
-      this.stageFinished = true;
-      this.advance();
+      this.finishRound();
       return;
     }
     this.nextBet();
@@ -641,11 +648,57 @@ class Game {
     }
   }
 
+  finishRound() {
+    let winners: Winner[] = [];
+    for (let i = 0; i < this.players.length; i++) {
+      const bet = this.bets[i]!;
+      if (bet.type == "fold") continue;
+
+      const player = this.players[i]!;
+      const handResult = bestHand(player.hand!, this.communityCards);
+
+      const thisWinner: Winner = {
+        playerIdx: i,
+        player: player.id,
+        handResult,
+        bet,
+      };
+
+      if (winners.length == 0) {
+        winners = [thisWinner];
+        continue;
+      }
+
+      const comparison = handResult.bestHand.compare(
+        winners[0]!.handResult.bestHand,
+      );
+
+      if (comparison == 0) {
+        winners.push(thisWinner);
+      } else if (comparison > 0) {
+        winners = [thisWinner];
+      } else {
+        continue;
+      }
+    }
+
+    io.to(`game-${this.id}`).emit("roundFinished", {
+      roundId: this.roundId,
+      winners,
+    });
+
+    this.stage = GameStage.PreFlop;
+    this.stageFinished = true;
+    // this.advance(); // Admin manually starts next round
+  }
+
   advance() {
     if (!this.stageFinished) return;
     this.stageFinished = false;
     switch (this.stage) {
       case GameStage.PreFlop:
+        this.roundId++;
+        this.pot = 0;
         this.communityCards = [];
         this.initDeck();
         this.shuffleDeck();
