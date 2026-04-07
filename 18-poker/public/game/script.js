@@ -380,7 +380,7 @@ document.querySelector("#raise-form").addEventListener("submit", (e) => {
     bet: data.bet,
   });
 
-  this.reset();
+  e.target.elements["bet"].value = "";
   e.preventDefault();
 });
 
