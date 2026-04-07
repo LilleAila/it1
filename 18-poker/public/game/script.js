@@ -388,3 +388,7 @@ document.querySelector("#fold-btn").addEventListener("click", () => {
     action: "fold",
   });
 });
+
+socket.on("roundFinished", (data) => {
+  console.log(data);
+});

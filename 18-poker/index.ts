@@ -302,6 +302,7 @@ function bestHand(holeCards: Card[], communityCards: Card[]): HandResult {
 class Player {
   public hand: [Card, Card] | null;
   public isAdmin: boolean = false;
+  totalCommited: number = 0;
 
   constructor(
     public readonly id: string,
@@ -336,13 +337,6 @@ interface Bet {
   type: "none" | "bet" | "fold"; // Grouping check, call and raise into the same type
   value: number;
   allIn: boolean;
-}
-
-interface Winner {
-  playerIdx: number;
-  player: string;
-  handResult: HandResult;
-  bet: Bet;
 }
 
 class Game {
@@ -649,37 +643,130 @@ class Game {
   }
 
   finishRound() {
-    let winners: Winner[] = [];
-    for (let i = 0; i < this.players.length; i++) {
-      const bet = this.bets[i]!;
-      if (bet.type == "fold") continue;
+    // let winners: Winner[] = [];
+    // for (let i = 0; i < this.players.length; i++) {
+    //   const bet = this.bets[i]!;
+    //   if (bet.type == "fold") continue;
+    //
+    //   const player = this.players[i]!;
+    //   const handResult = bestHand(player.hand!, this.communityCards);
+    //
+    //   const thisWinner: Winner = {
+    //     playerIdx: i,
+    //     player: player.id,
+    //     handResult,
+    //     bet,
+    //   };
+    //
+    //   if (winners.length == 0) {
+    //     winners = [thisWinner];
+    //     continue;
+    //   }
+    //
+    //   const comparison = handResult.bestHand.compare(
+    //     winners[0]!.handResult.bestHand,
+    //   );
+    //
+    //   if (comparison == 0) {
+    //     winners.push(thisWinner);
+    //   } else if (comparison > 0) {
+    //     winners = [thisWinner];
+    //   } else {
+    //     continue;
+    //   }
+    // }
 
-      const player = this.players[i]!;
-      const handResult = bestHand(player.hand!, this.communityCards);
+    let playersLeft = 0;
+    for (const b of this.bets) {
+      if (b.type != "fold" && !b.allIn) {
+        playersLeft++;
+      }
+    }
 
-      const thisWinner: Winner = {
+    if (playersLeft >= 2 && this.stage <= GameStage.River) {
+      this.stageFinished = true;
+      this.advance();
+      return;
+    }
+
+    const activePlayers = this.players
+      .map((player, i) => ({
         playerIdx: i,
-        player: player.id,
-        handResult,
-        bet,
-      };
+        player,
+        bet: this.bets[i]!,
+        handResult: bestHand(player.hand!, this.communityCards),
+        remainingToClaim: this.bets[i]!.value,
+      }))
+      .filter((p) => p.bet.type != "fold");
 
-      if (winners.length == 0) {
-        winners = [thisWinner];
-        continue;
+    // Sort by hand strength descending
+    activePlayers.sort((a, b) =>
+      b.handResult.bestHand.compare(a.handResult.bestHand),
+    );
+
+    const remainingInPot = this.bets.map((b) => b.value);
+    const totalPayouts: Record<string, number> = {};
+
+    let i = 0;
+    while (i < activePlayers.length) {
+      let j = i;
+      while (
+        j < activePlayers.length &&
+        activePlayers[i]!.handResult.bestHand.compare(
+          activePlayers[j]!.handResult.bestHand,
+        ) == 0
+      ) {
+        j++;
       }
 
-      const comparison = handResult.bestHand.compare(
-        winners[0]!.handResult.bestHand,
-      );
+      let currentWinners = activePlayers.slice(i, j);
 
-      if (comparison == 0) {
-        winners.push(thisWinner);
-      } else if (comparison > 0) {
-        winners = [thisWinner];
-      } else {
-        continue;
+      while (currentWinners.length > 0) {
+        // Sort by bet ascending
+        currentWinners.sort((a, b) => a.remainingToClaim - b.remainingToClaim);
+
+        const smallestWinnerClaim = currentWinners[0]!.remainingToClaim;
+        if (smallestWinnerClaim <= 0) {
+          currentWinners.shift();
+          continue;
+        }
+
+        let potSlice = 0;
+        for (let k = 0; k < remainingInPot.length; k++) {
+          const take = Math.min(remainingInPot[k]!, smallestWinnerClaim);
+          potSlice += take;
+          remainingInPot[k]! -= take;
+        }
+
+        const share = Math.floor(potSlice / currentWinners.length);
+        let remainder = potSlice % currentWinners.length;
+
+        for (const winner of currentWinners) {
+          const extra = remainder > 0 ? 1 : 0;
+          totalPayouts[winner.player.id] =
+            (totalPayouts[winner.player.id] || 0) + share + extra;
+          remainder--;
+          winner.remainingToClaim -= smallestWinnerClaim;
+        }
+
+        currentWinners = currentWinners.filter((w) => w.remainingToClaim > 0);
       }
+
+      i = j;
+    }
+
+    const winners = activePlayers
+      .filter((p) => totalPayouts[p.player.id]! > 0)
+      .map((p) => ({
+        playerIdx: p.playerIdx,
+        player: p.player.id,
+        handResult: p.handResult,
+        bet: p.bet,
+        won: totalPayouts[p.player.id] || 0,
+      }));
+
+    for (const winner of winners) {
+      this.players[winner.playerIdx]!.stack += winner.won;
     }
 
     io.to(`game-${this.id}`).emit("roundFinished", {
@@ -699,6 +786,7 @@ class Game {
       case GameStage.PreFlop:
         this.roundId++;
         this.pot = 0;
+        this.currentBet = 0;
         this.communityCards = [];
         this.initDeck();
         this.shuffleDeck();
@@ -760,7 +848,7 @@ class Game {
         // final betting round, finish round etc
         this.dealer =
           (this.dealer - 1 + this.players.length) % this.players.length;
-        this.stage = GameStage.PreFlop;
+        this.stage = GameStage.Showdown;
         break;
     }
   }
