@@ -116,6 +116,11 @@ input {
 #game-id {
   color: var(--base05);
   font-size: 1rem;
+
+  cursor: pointer;
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 .game-container {

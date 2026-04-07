@@ -528,6 +528,9 @@ class Game {
   bet(value: number, blind: boolean = false) {
     const stack = this.players[this.bettingPlayer]!.stack;
     const bet = Math.min(value, stack);
+    const prevBet = this.bets[this.bettingPlayer]!.value;
+    const diff = bet - prevBet;
+
     this.bets[this.bettingPlayer] = {
       // Whether to count as an action or not.
       // used to determine when the round is over
@@ -537,9 +540,10 @@ class Game {
       allIn: stack <= value,
     };
 
+    const player = this.players[this.bettingPlayer]!;
     this.currentBet = Math.max(this.currentBet, bet);
-    this.players[this.bettingPlayer]!.stack -= bet;
-    this.pot += bet;
+    player.stack -= diff;
+    this.pot += diff;
     this.emitBets();
   }
 
@@ -564,8 +568,10 @@ class Game {
       for (let i = 0; i < this.bets.length; i++) {
         const prevBet = this.bets[i]!;
         this.bets[i]!.type = prevBet.type == "fold" ? "fold" : "none";
+        this.bets[i]!.value = 0;
       }
     }
+    this.currentBet = 0;
     this.bettingPlayer = this.dealer;
     this.nextBet();
     this.emitBets();
@@ -616,13 +622,12 @@ class Game {
     switch (action) {
       case "fold":
         this.bets[this.bettingPlayer]!.type = "fold";
-        this.emitBets();
         this.endBet();
         break;
       case "check":
         if (prevBet.value < this.currentBet)
           throw new Error("Bet is too low, cannot check.");
-        this.bet(this.currentBet!);
+        this.bet(this.currentBet);
         this.endBet();
         break;
       case "call":
@@ -640,47 +645,21 @@ class Game {
         this.endBet();
         break;
     }
+    this.emitBets();
   }
 
   finishRound() {
-    // let winners: Winner[] = [];
-    // for (let i = 0; i < this.players.length; i++) {
-    //   const bet = this.bets[i]!;
-    //   if (bet.type == "fold") continue;
-    //
-    //   const player = this.players[i]!;
-    //   const handResult = bestHand(player.hand!, this.communityCards);
-    //
-    //   const thisWinner: Winner = {
-    //     playerIdx: i,
-    //     player: player.id,
-    //     handResult,
-    //     bet,
-    //   };
-    //
-    //   if (winners.length == 0) {
-    //     winners = [thisWinner];
-    //     continue;
-    //   }
-    //
-    //   const comparison = handResult.bestHand.compare(
-    //     winners[0]!.handResult.bestHand,
-    //   );
-    //
-    //   if (comparison == 0) {
-    //     winners.push(thisWinner);
-    //   } else if (comparison > 0) {
-    //     winners = [thisWinner];
-    //   } else {
-    //     continue;
-    //   }
-    // }
-
     let playersLeft = 0;
     for (const b of this.bets) {
       if (b.type != "fold" && !b.allIn) {
         playersLeft++;
       }
+    }
+
+    for (let i = 0; i < this.bets.length; i++) {
+      const player = this.players[i]!;
+      const bet = this.bets[i]!;
+      player.totalCommited += bet.value;
     }
 
     if (playersLeft >= 2 && this.stage <= GameStage.River) {
@@ -695,7 +674,7 @@ class Game {
         player,
         bet: this.bets[i]!,
         handResult: bestHand(player.hand!, this.communityCards),
-        remainingToClaim: this.bets[i]!.value,
+        remainingToClaim: player.totalCommited,
       }))
       .filter((p) => p.bet.type != "fold");
 
@@ -704,7 +683,7 @@ class Game {
       b.handResult.bestHand.compare(a.handResult.bestHand),
     );
 
-    const remainingInPot = this.bets.map((b) => b.value);
+    const remainingInPot = this.players.map((p) => p.totalCommited);
     const totalPayouts: Record<string, number> = {};
 
     let i = 0;
@@ -776,6 +755,7 @@ class Game {
 
     this.stage = GameStage.PreFlop;
     this.stageFinished = true;
+    this.emitBets();
     // this.advance(); // Admin manually starts next round
   }
 
@@ -787,6 +767,7 @@ class Game {
         this.roundId++;
         this.pot = 0;
         this.currentBet = 0;
+        this.players.forEach((p) => (p.totalCommited = 0));
         this.communityCards = [];
         this.initDeck();
         this.shuffleDeck();

@@ -22,7 +22,14 @@
         </div>
         <form id="join-form">
           <button action="submit">Join Game</button>
-          <input type="number" name="stack" required placeholder="Stack" />
+          <input
+            type="number"
+            min="0"
+            max="1000000000"
+            name="stack"
+            required
+            placeholder="Stack"
+          />
         </form>
       </div>
 
@@ -96,7 +103,7 @@
 
         <br />
 
-        <button id="advance">Advance Game</button>
+        <button id="advance">Next Round</button>
       </div>
 
       <div class="game">
@@ -140,6 +147,8 @@
                   name="bet"
                   placeholder="Bet"
                   type="number"
+                  min="0"
+                  max="1000000000"
                   required
                   disabled
                 />

@@ -380,6 +380,7 @@ document.querySelector("#raise-form").addEventListener("submit", (e) => {
     bet: data.bet,
   });
 
+  this.reset();
   e.preventDefault();
 });
 
@@ -387,6 +388,11 @@ document.querySelector("#fold-btn").addEventListener("click", () => {
   socket.emit("betResponse", {
     action: "fold",
   });
+});
+
+document.querySelector("#game-id").addEventListener("click", async () => {
+  const url = window.location.href;
+  await navigator.clipboard.writeText(url);
 });
 
 socket.on("roundFinished", (data) => {
