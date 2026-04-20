@@ -165,6 +165,18 @@ input {
   &:not(.active-requests) {
     display: none;
   }
+
+  table {
+    width: 100%;
+
+    button {
+      padding: 1rem 0;
+    }
+
+    td {
+      padding: 0.3rem 0.5rem;
+    }
+  }
 }
 
 #game-options {
@@ -257,6 +269,11 @@ input {
         font-weight: bold;
         color: var(--base09);
       }
+    }
+
+    .player-result {
+      color: var(--base0A);
+      font-size: 1.4rem;
     }
   }
 }

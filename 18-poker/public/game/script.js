@@ -27,8 +27,9 @@ let joinRequests = {};
 let playerSelf = {};
 let userSelf = {};
 let currentBet = 0;
-let currentPot = 0;
-let bets = [];
+let selfBet = 0;
+
+const players = {};
 
 const ranks = [
   "",
@@ -81,17 +82,7 @@ document.querySelector("#back-button").addEventListener("click", (_e) => {
 
 socket.on("playerJoined", ({ message, player }) => {
   console.log(message);
-  const tr = document.createElement("tr");
-  tr.id = `player-${player.id}`;
-  if (userSelf.id == player.id) {
-    tr.classList.add("self");
-  }
-  tr.innerHTML = `
-    <td>${player.username}${player.isAdmin ? " (Admin)" : ""}</td>
-    <td class="player-stack">${player.stack}</td>
-    <td class="player-state"></td>
-  `;
-  document.querySelector("#players tbody").appendChild(tr);
+  addPlayer(player);
 });
 
 socket.on("playerLeft", ({ message, playerId }) => {
@@ -99,6 +90,7 @@ socket.on("playerLeft", ({ message, playerId }) => {
   console.log(playerId);
   const playerElement = document.querySelector(`#player-${playerId}`);
   playerElement.remove();
+  delete players[playerId];
 });
 
 socket.on("playerState", (playerState) => {
@@ -135,21 +127,27 @@ document.querySelector("#game-options").addEventListener("submit", (e) => {
   socket.emit("updateOptions", { gameId, options });
 });
 
-function initializeGame(state) {
-  document.querySelector("#username").textContent = userSelf.username;
-  for (const player of state.players) {
-    const tr = document.createElement("tr");
-    tr.id = `player-${player.id}`;
-    if (userSelf.id == player.id) {
-      tr.classList.add("self");
-    }
-    tr.innerHTML = `
+function addPlayer(player) {
+  const tr = document.createElement("tr");
+  tr.id = `player-${player.id}`;
+  if (userSelf.id == player.id) {
+    tr.classList.add("self");
+  }
+  tr.innerHTML = `
       <td>${player.username}${player.isAdmin ? " (Admin)" : ""}</td>
       <td class="player-stack">${player.stack}</td>
       <td class="player-state"></td>
+      <td class="player-result"></td>
     `;
-    document.querySelector("#players tbody").appendChild(tr);
-  }
+  document.querySelector("#players tbody").appendChild(tr);
+  players[player.id] = {
+    element: tr,
+  };
+}
+
+function initializeGame(state) {
+  document.querySelector("#username").textContent = userSelf.username;
+  state.players.forEach(addPlayer);
 
   for (let i = 0; i < 5; i++) {
     const cardElement = cardElements[i + 2];
@@ -274,6 +272,10 @@ socket.on("newHand", ({ message, hand }) => {
     cardElement.rank = ranks[card.rank];
     cardElement.suit = suits[card.suit];
   }
+
+  for (const p of Object.values(players)) {
+    p.element.querySelector(".player-result").innerHTML = "";
+  }
 });
 
 socket.on("communityCards", ({ message, cards }) => {
@@ -329,7 +331,11 @@ socket.on("bet", (b) => {
 
 socket.on("betsUpdated", ({ pot, bet, bets, players, bettingPlayer }) => {
   currentBet = bet;
-  actionsContainer.querySelector("#current-bet").textContent = currentBet;
+  if (bettingPlayer == userSelf.id) {
+    selfBet = bet;
+  }
+  actionsContainer.querySelector("#current-bet").textContent =
+    `${selfBet} / ${currentBet}`;
   document.querySelector("#pot-value").textContent = pot;
 
   for (const bet of bets) {
@@ -396,5 +402,11 @@ document.querySelector("#game-id").addEventListener("click", async () => {
 });
 
 socket.on("roundFinished", (data) => {
-  console.log(data);
+  console.log("Round Finished", data);
+  for (const w of data.winners) {
+    console.log(w);
+    const playerTr = document.getElementById(`player-${w.player}`);
+    playerTr.querySelector(".player-result").innerHTML = `+${w.won}`;
+    console.log(playerTr);
+  }
 });
