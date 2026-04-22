@@ -493,14 +493,14 @@ class Game {
         INSERT OR IGNORE INTO user_game (user_id, game_id)
         VALUES (?, ?)
       `,
-      ).run(player.id, this.id);
+      ).run(player.id, this.dbId);
 
       db.prepare(
         `
         INSERT INTO user_buy_in (user_id, game_id, buy_in_number, amount, timestamp, joined_round)
         VALUES (?, ?, ?, ?, ?, ?)
       `,
-      ).run(player.id, this.id, 1, player.stack, Date.now(), this.roundId);
+      ).run(player.id, this.dbId, 1, player.stack, Date.now(), this.roundId);
     });
 
     try {
