@@ -42,7 +42,7 @@ const ranks = [
   "7",
   "8",
   "9",
-  "10",
+  "T",
   "J",
   "Q",
   "K",
@@ -252,6 +252,10 @@ socket.on("disconnect", (reason) => {
 
 document.querySelector("#advance").addEventListener("click", () => {
   socket.emit("advanceGame", { gameId });
+});
+
+document.querySelector("#end").addEventListener("click", () => {
+  socket.emit("endGame", { gameId });
 });
 
 socket.on("newHand", ({ message, hand }) => {

@@ -135,8 +135,26 @@ enum Suit {
   Spades,
 }
 const suits = Object.values(Suit).filter((x) => typeof x == "number");
+const suitNames = ["c", "d", "h", "s"];
 
 const ranks = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
+const rankNames = [
+  "",
+  "A",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "10",
+  "J",
+  "Q",
+  "K",
+  "A",
+];
 
 enum HandType {
   HighCard = 0,
@@ -341,6 +359,7 @@ interface Bet {
 
 class Game {
   public readonly id: string;
+  public dbId: number = -1;
   public players: Player[];
   public state: "waiting" | "active" = "waiting";
   public communityCards: Card[];
@@ -351,6 +370,7 @@ class Game {
   public options: GameOptions;
   public stage: GameStage = GameStage.PreFlop;
   public roundId: number = 0;
+  public roundDbId: number = -1;
 
   public bettingPlayer: number = 0;
   public currentBet: number = 0;
@@ -374,6 +394,12 @@ class Game {
     this.requestedSeats = {};
 
     this.initDeck();
+
+    this.dbId = (
+      db
+        .prepare(`INSERT INTO game (start_time) VALUES (?) RETURNING id`)
+        .get(Date.now()) as { id: number }
+    ).id;
   }
 
   getPublicState() {
@@ -383,7 +409,12 @@ class Game {
       pot: this.pot,
       dealer: this.dealer,
       admin: this.admin,
-      players: this.players,
+      players: this.players.map((p) => {
+        return {
+          ...p,
+          hand: null,
+        };
+      }),
       options: this.options,
     };
   }
@@ -455,7 +486,30 @@ class Game {
   approveJoin(playerId: string): Player {
     const player = this.addPlayer(this.requestedSeats[playerId]!);
     delete this.requestedSeats[playerId];
-    return player;
+
+    const dbOperations = db.transaction(() => {
+      db.prepare(
+        `
+        INSERT OR IGNORE INTO user_game (user_id, game_id)
+        VALUES (?, ?)
+      `,
+      ).run(player.id, this.id);
+
+      db.prepare(
+        `
+        INSERT INTO user_buy_in (user_id, game_id, buy_in_number, amount, timestamp, joined_round)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `,
+      ).run(player.id, this.id, 1, player.stack, Date.now(), this.roundId);
+    });
+
+    try {
+      dbOperations();
+      return player;
+    } catch (err) {
+      console.error("Failed to approve join in database: ", err);
+      throw new Error("Database error: Could not process buy-in");
+    }
   }
 
   declineJoin(playerId: string) {
@@ -500,11 +554,10 @@ class Game {
 
   nextBet() {
     const n = this.players.length;
-    // this.bettingPlayer = (this.bettingPlayer - 1 + n) % n;
     let next = this.bettingPlayer;
 
     for (let i = 0; i < n; i++) {
-      next = (this.bettingPlayer - 1 + n) % n;
+      next = (this.bettingPlayer + 1) % n;
       const bet = this.bets[next]!;
       if (bet.type != "fold" && !bet.allIn) {
         this.bettingPlayer = next;
@@ -668,12 +721,16 @@ class Game {
       return;
     }
 
+    const bestHands = this.players.map((p) =>
+      bestHand(p.hand!, this.communityCards),
+    );
+
     const activePlayers = this.players
       .map((player, i) => ({
         playerIdx: i,
         player,
         bet: this.bets[i]!,
-        handResult: bestHand(player.hand!, this.communityCards),
+        handResult: bestHands[i]!,
         remainingToClaim: player.totalCommited,
       }))
       .filter((p) => p.bet.type != "fold");
@@ -744,8 +801,64 @@ class Game {
         won: totalPayouts[p.player.id] || 0,
       }));
 
-    for (const winner of winners) {
-      this.players[winner.playerIdx]!.stack += winner.won;
+    const dbOperations = db.transaction(() => {
+      const communityCards = this.communityCards
+        .map((c) => rankNames[c.rank]! + suitNames[c.suit]!)
+        .join(" ");
+
+      const roundDbId = (
+        db
+          .prepare(
+            `
+        INSERT INTO game_round (game_id, timestamp, community_cards, pot, game_stage)
+        VALUES (?, ?, ?, ?, ?)
+        RETURNING id
+      `,
+          )
+          .get(this.dbId, Date.now(), communityCards, this.pot, this.stage) as {
+          id: string;
+        }
+      ).id;
+
+      for (const [i, p] of this.players.entries()) {
+        const cards = p
+          .hand!.map((c) => rankNames[c.rank]! + suitNames[c.suit]!)
+          .join(" ");
+
+        db.prepare(
+          `
+            INSERT INTO user_round (round_id, user_id, cards, hand_type, final_action, contributed)
+            VALUES (?, ?, ?, ?, ?, ?)
+          `,
+        ).run(
+          roundDbId,
+          p.id,
+          cards,
+          bestHands[i]!.bestHand.type,
+          this.bets[i]!.type,
+          p.totalCommited,
+        );
+      }
+
+      for (const w of winners) {
+        db.prepare(
+          `
+          INSERT INTO round_winner (round_id, user_id, amount_won)
+          VALUES (?, ?, ?)
+        `,
+        ).run(roundDbId, w.player, w.won);
+      }
+    });
+
+    try {
+      dbOperations();
+
+      for (const winner of winners) {
+        this.players[winner.playerIdx]!.stack += winner.won;
+      }
+    } catch (err) {
+      console.error("Failed to end round: ", err);
+      throw new Error("Database error: Could not end round");
     }
 
     io.to(`game-${this.id}`).emit("roundFinished", {
@@ -772,6 +885,7 @@ class Game {
         this.initDeck();
         this.shuffleDeck();
         this.dealHoleCards();
+
         for (const p of this.players) {
           io.to(`player-${p.id}`).emit("newHand", {
             message: "Dealt Hand",
@@ -832,6 +946,14 @@ class Game {
         this.stage = GameStage.Showdown;
         break;
     }
+  }
+
+  endGame() {
+    if (this.stage != GameStage.PreFlop) return;
+    db.prepare(`UPDATE game SET end_time = ? WHERE id = ?`).run(
+      Date.now(),
+      this.dbId,
+    );
   }
 }
 
@@ -914,6 +1036,15 @@ io.on("connection", (socket) => {
     game.advance();
   });
 
+  socket.on("endGame", ({ gameId }) => {
+    const game = pokerServer.getGame(gameId);
+    if (!game) return;
+
+    if (socket.data.user.id != game.admin) return;
+
+    game.endGame();
+  });
+
   socket.on("updateOptions", ({ gameId, options }) => {
     const game = pokerServer.getGame(gameId);
     if (!game) return;
@@ -941,6 +1072,9 @@ io.on("connection", (socket) => {
     if (!game.hasPlayer(socket.data.user.id)) {
       if (game.nPlayers() < 1) {
         game.addPlayer(player);
+
+        game.requestJoin(player);
+        game.approveJoin(player.id);
 
         socket.emit("playerState", {
           message: "Joined Game",

@@ -159,6 +159,12 @@ input {
       display: none;
     }
   }
+
+  .admin-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
 }
 
 .requested-seats {
