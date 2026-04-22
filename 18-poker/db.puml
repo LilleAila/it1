@@ -3,11 +3,12 @@ left to right direction
 skinparam linetype ortho
 hide circle
 
-entity user {
+entity users {
   +id: int <<PK>>
   --
-  +username: str
-  +password_hash: str
+  +username: text
+  +password_hash: text
+  +created_at: datetime
 }
 
 entity game {
@@ -19,46 +20,62 @@ entity game {
 }
 
 entity user_game {
-  +user: int <<FK>> <<PK>>
-  +game: int <<FK>> <<PK>>
-  --
-  +buy_ins: int
-  +hands_won: int
-  +total_investment: int
-  +final_balance: int
+  +user_id: int <<FK>> <<PK>>
+  +game_id: int <<FK>> <<PK>>
 }
 
-entity round {
+entity user_buy_in {
   +id: int <<PK>>
   --
-  +timesstamp: int
-  +game: int <<FK>>
-  +community_cards: str
+  +user_id: int <<FK>>
+  +game_id: int <<FK>>
+  +buy_in_number: int
+  +amount: int
+  +timestamp: int
+  +joined_round: int
+}
+
+entity game_round {
+  +id: int <<PK>>
+  --
+  +game_id: int <<FK>>
+  +timestamp: int
+  +community_cards: text
   +pot: int
-  +hand_type: str
+  +game_stage: int
 }
 
-entity round_winner {
-  +round: int <<FK>> <<PK>>
-  +user: int <<FK>> <<PK>>
-}
-
-entity round_hand {
+entity user_round {
   +id: int <<PK>>
   --
-  +round: int <<FK>>
-  +user: int <<FK>>
-  +cards: str
-  +hand_type: str
-  +final_action: str
+  +round_id: int <<FK>>
+  +user_id: int <<FK>>
+  +cards: text
+  +hand_type: text
+  +final_action: text
   +contributed: int
 }
 
-user ||--o{ user_game
-user_game }o--|| game
-round }o--|| game
-round_hand }o--|| round
-round_hand }o--|| user
-round ||--o{ round_winner
-round_winner }o--|| user
+entity round_winner {
+  +round_id: int <<FK>> <<PK>>
+  +user_id: int <<FK>> <<PK>>
+  --
+  +amount_won: int
+}
+
+' Relationships
+users ||--o{ user_game
+game  ||--o{ user_game
+
+users ||--o{ user_buy_in
+game  ||--o{ user_buy_in
+
+game  ||--o{ game_round
+
+game_round ||--o{ user_round
+users      ||--o{ user_round
+
+game_round ||--o{ round_winner
+users      ||--o{ round_winner
+
 @enduml
