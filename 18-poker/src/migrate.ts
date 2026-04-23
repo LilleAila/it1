@@ -18,7 +18,7 @@ export function migrate() {
     .all()
     .map((m: any) => m.name);
 
-  const migrationsDir = path.join(__dirname, "migrations");
+  const migrationsDir = path.join(__dirname, "..", "migrations"); // FIXME: parent dir of this because moved
   const files = fs.readdirSync(migrationsDir).sort();
 
   for (const file of files) {
