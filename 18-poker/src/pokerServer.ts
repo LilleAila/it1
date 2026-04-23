@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import path from "path";
 import { Game } from "./game";
 import { Player } from "./game";
 import type { GameOptions } from "./game";
@@ -48,7 +49,7 @@ export function initPokerServer() {
     if (!game) {
       return res.status(404).send("Game not found");
     }
-    res.sendFile(__dirname + "/public/game/index.html");
+    res.sendFile(path.join(__dirname, "..", "/public/game/index.html"));
   });
 
   // Websockets / socket.io

@@ -326,6 +326,7 @@ input {
   .logged-in,
   .not-logged-in {
     text-align: center;
+    margin-bottom: 1rem;
   }
 }
 
@@ -368,5 +369,33 @@ a {
   th:not(:last-child),
   td:not(:last-child) {
     border-right: 1px solid var(--base02);
+  }
+
+  th:first-child,
+  td:first-child {
+    text-align: left;
+  }
+
+  th:last-child,
+  td:last-child {
+    text-align: right;
+  }
+
+  td:last-child {
+    font-family: monospace;
+  }
+
+  th {
+    border-bottom: 1px solid var(--base02);
+  }
+
+  .profit {
+    &.positive {
+      color: var(--base0B);
+    }
+
+    &.negative {
+      color: var(--base08);
+    }
   }
 }
