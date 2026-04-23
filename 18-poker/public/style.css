@@ -341,3 +341,32 @@ input {
     }
   }
 }
+
+a {
+  color: var(--base0D);
+  &:hover {
+    color: var(--base0C);
+  }
+}
+
+#leaderboard-table {
+  width: 30rem;
+  border-collapse: collapse;
+  border: 1px solid var(--base02);
+  table-layout: fixed;
+  font-size: 1.2rem;
+
+  tr:nth-child(even) {
+    background-color: var(--base01);
+  }
+
+  th,
+  td {
+    padding: 1rem;
+  }
+
+  th:not(:last-child),
+  td:not(:last-child) {
+    border-right: 1px solid var(--base02);
+  }
+}
