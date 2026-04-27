@@ -447,3 +447,7 @@ abbr {
   white-space: nowrap;
   border: 0;
 }
+
+.small-card {
+  width: 4rem;
+}

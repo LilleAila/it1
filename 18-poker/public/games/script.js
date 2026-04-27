@@ -16,6 +16,17 @@ function formatISO(date) {
   return `${year}-${month}-${day} ${hours}:${minutes}`;
 }
 
+function formatCards(cs) {
+  return cs
+    .split(" ")
+    .map(
+      (c) => `
+      <playing-card class="small-card" cid="${c}"></playing-card>
+    `,
+    )
+    .join("");
+}
+
 async function fetchGame() {
   const res = await fetch(`/api/game/${userId}`);
   const data = await res.json();
@@ -64,8 +75,8 @@ async function fetchGame() {
         <td>${formatter.format(r.round_number)}</td>
         <td>${r.winner_name}</td>
         <td>${formatProfit(r.amount_won)}</td>
-        <td>${r.community_cards}</td>
-        <td>${r.winning_hand}</td>
+        <td>${formatCards(r.community_cards)}</td>
+        <td>${formatCards(r.winning_hand)}</td>
       </tr>
     `,
     )
