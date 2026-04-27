@@ -75,4 +75,8 @@ document.querySelector("#user-games tbody").addEventListener("click", (e) => {
   window.location.href = url;
 });
 
+document.querySelector("#back-button").addEventListener("click", (_e) => {
+  history.back();
+});
+
 await fetchUser();

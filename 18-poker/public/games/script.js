@@ -80,4 +80,8 @@ document.querySelector("#game-players tbody").addEventListener("click", (e) => {
   window.location.href = url;
 });
 
+document.querySelector("#back-button").addEventListener("click", (_e) => {
+  history.back();
+});
+
 await fetchGame();
