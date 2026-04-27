@@ -1,0 +1,2 @@
+ALTER TABLE game
+DROP COLUMN rounds;
