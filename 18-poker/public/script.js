@@ -2,6 +2,9 @@ const main = document.querySelector(".content");
 const username = document.querySelector("#username");
 
 const formatter = new Intl.NumberFormat("nb-NO");
+function formatProfit(n) {
+  return `<span class="${n < 0 ? "negative" : "positive"}">${n >= 0 ? "+ " : "- "}${formatter.format(Math.abs(n))}</span>`;
+}
 
 async function auth() {
   const res = await fetch("/me");
@@ -26,7 +29,7 @@ async function getLeaderboard() {
         (p) => `
       <tr>
         <td><a href="/user/${p.id}">${p.username}</a></td>
-        <td><span class="profit ${p.net_profit >= 0 ? "positive" : "negative"}">${formatter.format(p.net_profit)}<span></td>
+        <td>${formatProfit(p.net_profit)}</td>
       </tr>
     `,
       )
