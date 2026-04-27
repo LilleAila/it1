@@ -14,7 +14,6 @@ entity users {
 entity game {
   +id: int <<PK>>
   --
-  +rounds: int
   +start_time: int
   +end_time: int
 }
