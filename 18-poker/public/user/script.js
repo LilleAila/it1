@@ -33,9 +33,8 @@ async function fetchUser() {
     ["Avg. contribution", formatter.format(s.avg_contribution)],
     ["Games played", formatter.format(s.games_played)],
     ["Rounds played", formatter.format(s.total_rounds)],
-    ["Net profit", formatProfit(s.net_profit)],
     ["Total invested", formatter.format(s.total_invested)],
-    ["Total won", formatter.format(s.total_won)],
+    ["Net profit", formatProfit(s.net_profit)],
     ["Biggest win", formatProfit(s.biggest_win)],
     [
       `<abbr title="Voulantarily Puts into Pot">VPIP</abbr>`,

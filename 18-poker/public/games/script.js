@@ -76,7 +76,7 @@ async function fetchGame() {
       <tr>
         <td>${formatter.format(r.round_number)}</td>
         <td>${r.winner_name}</td>
-        <td>${formatProfit(r.amount_won)}</td>
+        <td>${formatProfit(r.profit)} (${formatter.format(r.amount_won)})</td>
         <td>${formatCards(r.community_cards)}</td>
         <td>${formatCards(r.winning_hand)}</td>
       </tr>

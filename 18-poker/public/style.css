@@ -386,7 +386,7 @@ a {
 
   &:hover,
   &:focus-within {
-    background-color: var(--base02);
+    background-color: var(--base02) !important;
   }
 
   &:active {

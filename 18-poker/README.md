@@ -12,6 +12,56 @@ Dersom en bruker ønsker å få brukeren sin fjernet fra plattformen, er dette f
 
 Dataen lagres på en sikker maskin der ingen uautoriserte har fysisk tilgang.
 
+## Ruter
+
+### `/` - hovedside
+
+Inneholder leaderboard og innloggingsskjema, samt skjema for å bli med i eller opprette et nytt spill.
+
+### `/game/:id` - Aktivt spill
+
+### `/user/:id` - Detaljert spillerinformasjon
+
+### `/games/:id` - Oppsummering av spill
+
+## API
+
+### POST `/signup`
+
+Create a new user. Provide `username` and `password` in the request body.
+
+### POST `/login`
+
+Log in to an existing user. Provide `username` and `password` in the request body.
+
+### POST `/logout`
+
+Clear all authentication cookies and log out.
+
+### POST `/new-game`
+
+Oppretter et nytt spill og videresender brukeren til dette spillet.
+
+### POST `/join-game`
+
+Body inneholder en string `gameId`. Brukeren videresendes til spillet.
+
+### POST `/api/games/:gameId/join`
+
+Send en forespørsel til spillets administrator om å bli med. Om man er første som blir med, blir man automatisk godtatt og blir administrator.
+
+### GET `/api/leaderboard`
+
+List of all users ordered by their total profit.
+
+### GET `/api/user/:id`
+
+Information and statistics about a specific user. This includes the games they have played and various statistics about all games.
+
+### GET `/api/game/:id`
+
+Information about a specific game.
+
 ## Attributions
 
 - Playing card SVGs (unlicense): https://github.com/cardmeister/cardmeister.github.io
