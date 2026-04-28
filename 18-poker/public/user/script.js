@@ -16,6 +16,8 @@ function formatISO(date) {
   return `${year}-${month}-${day} ${hours}:${minutes}`;
 }
 
+const games = document.querySelector("#user-games tbody");
+
 async function fetchUser() {
   const res = await fetch(`/api/user/${userId}`);
   const data = await res.json();
@@ -54,10 +56,10 @@ async function fetchUser() {
     )
     .join("");
 
-  document.querySelector("#user-games tbody").innerHTML = data.games
+  games.innerHTML = data.games
     .map(
       (g) => `
-    <tr class="game-row" data-href="/games/${g.id}" title="View detailed game info">
+    <tr class="game-row" data-href="/games/${g.id}" title="View detailed game info" tabindex="1">
       <td>${formatISO(new Date(g.start_time))}<a href="/games/${g.id}" class="sr-only">View detailed game info</a></td>
       <td>${formatter.format(g.rounds)}</td>
       <td>${g.participants}</td>
@@ -67,13 +69,26 @@ async function fetchUser() {
     .join("");
 }
 
-document.querySelector("#user-games tbody").addEventListener("click", (e) => {
+function expandGame(e) {
   const row = e.target.closest(".game-row");
   if (!row) return;
   const url = row.getAttribute("data-href");
-  if (!url) return;
-  window.location.href = url;
-});
+
+  if (
+    e.type == "click" ||
+    (e.type == "keydown" && (e.key == "Enter" || e.key == " "))
+  ) {
+    const url = row.getAttribute("data-href");
+    if (!url) return;
+
+    if (e.key == " ") e.preventDefault();
+
+    window.location.href = url;
+  }
+}
+
+games.addEventListener("click", expandGame);
+games.addEventListener("keydown", expandGame);
 
 document.querySelector("#back-button").addEventListener("click", (_e) => {
   history.back();

@@ -28,7 +28,7 @@ async function getLeaderboard() {
       .map(
         (p) => `
       <tr>
-        <td><a href="/user/${p.id}">${p.username}</a></td>
+        <td><a href="/user/${p.id}" tabindex="1">${p.username}</a></td>
         <td>${formatProfit(p.net_profit)}</td>
       </tr>
     `,

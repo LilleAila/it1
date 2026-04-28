@@ -27,6 +27,8 @@ function formatCards(cs) {
     .join("");
 }
 
+const players = document.querySelector("#game-players tbody");
+
 async function fetchGame() {
   const res = await fetch(`/api/game/${userId}`);
   const data = await res.json();
@@ -56,10 +58,10 @@ async function fetchGame() {
     )
     .join("");
 
-  document.querySelector("#game-players tbody").innerHTML = data.users
+  players.innerHTML = data.users
     .map(
       (u) => `
-    <tr class="user-row" data-href="/user/${u.user_id}" title="View detailed user info">
+    <tr class="user-row" data-href="/user/${u.user_id}" title="View detailed user info" tabindex="1">
       <td>${u.username}<a href="/user/${u.user_id}" class="sr-only">View detailed user info</a></td>
       <td>${formatter.format(u.total_invested)}</td>
       <td>${formatProfit(u.net_profit)}</td>
@@ -83,13 +85,25 @@ async function fetchGame() {
     .join("");
 }
 
-document.querySelector("#game-players tbody").addEventListener("click", (e) => {
+function expandPlayer(e) {
   const row = e.target.closest(".user-row");
   if (!row) return;
-  const url = row.getAttribute("data-href");
-  if (!url) return;
-  window.location.href = url;
-});
+
+  if (
+    e.type == "click" ||
+    (e.type == "keydown" && (e.key == "Enter" || e.key == " "))
+  ) {
+    const url = row.getAttribute("data-href");
+    if (!url) return;
+
+    if (e.key == " ") e.preventDefault();
+
+    window.location.href = url;
+  }
+}
+
+players.addEventListener("click", expandPlayer);
+players.addEventListener("keydown", expandPlayer);
 
 document.querySelector("#back-button").addEventListener("click", (_e) => {
   history.back();
